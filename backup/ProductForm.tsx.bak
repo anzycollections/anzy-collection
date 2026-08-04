@@ -1,0 +1,135 @@
+"use client";
+
+import { useState, useRef } from "react";
+import { Product, Variante, useStore } from "@/context/StoreContext";
+
+interface Props { editingProduct: Product | null; onSave: () => void; }
+
+export default function ProductForm({ editingProduct, onSave }: Props) {
+  const { content, saveContent } = useStore();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const init = editingProduct || { id: "", brand: "ANZY", name: "", category: "gaines", badge: "Nouveauté", description: "", price: 0, currency: "XOF", material: "", sizes: [], colors: [{ name: "Noir", hex: "#1C1C1E" }], images: [], stock: 0, visible: true, variantes: [] as Variante[] };
+
+  const [form, setForm] = useState({
+    brand: init.brand, name: init.name, category: init.category, badge: init.badge,
+    description: init.description, price: init.price, currency: init.currency,
+    material: init.material, sizes: init.sizes.join(", "),
+    colors: init.colors, images: init.images, stock: init.stock, visible: init.visible,
+    variantes: init.variantes || [],
+  });
+
+  const [newVarLabel, setNewVarLabel] = useState("");
+  const [newOptName, setNewOptName] = useState("");
+  const [newOptPrice, setNewOptPrice] = useState(0);
+  const [newOptStock, setNewOptStock] = useState(0);
+  const [activeVar, setActiveVar] = useState("");
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files; if (!files) return; setUploading(true);
+    const imgs: string[] = []; let d = 0;
+    Array.from(files).forEach(f => { const r = new FileReader(); r.onloadend = () => { imgs.push(r.result as string); d++; if (d === files.length) { setForm({...form, images: [...form.images, ...imgs]}); setUploading(false); }}; r.readAsDataURL(f); });
+  };
+
+  const addColor = () => setForm({...form, colors: [...form.colors, { name: "Nouveau", hex: "#CCCCCC" }]});
+
+  const addVariante = () => {
+    if (!newVarLabel.trim() || form.variantes.find(v => v.label === newVarLabel.trim())) return;
+    setForm({...form, variantes: [...form.variantes, { label: newVarLabel.trim(), options: [] }]});
+    setNewVarLabel("");
+  };
+
+  const addOption = (label: string) => {
+    if (!newOptName.trim()) return;
+    const updated = form.variantes.map(v => v.label === label ? { ...v, options: [...v.options, { name: newOptName.trim(), price: newOptPrice, stock: newOptStock }] } : v);
+    setForm({...form, variantes: updated});
+    setNewOptName(""); setNewOptPrice(0); setNewOptStock(0); setActiveVar("");
+  };
+
+  const removeOption = (label: string, optName: string) => {
+    setForm({...form, variantes: form.variantes.map(v => v.label === label ? { ...v, options: v.options.filter(o => o.name !== optName) } : v)});
+  };
+
+  const removeVariante = (label: string) => setForm({...form, variantes: form.variantes.filter(v => v.label !== label)});
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const product: Product = {
+      id: editingProduct?.id || "p" + Date.now(),
+      brand: form.brand, name: form.name, category: form.category, badge: form.badge,
+      description: form.description, price: Number(form.price), currency: form.currency,
+      material: form.material, sizes: form.sizes.split(",").map(s => s.trim()).filter(Boolean),
+      colors: form.colors, images: form.images, stock: Number(form.stock),
+      visible: form.visible, variantes: form.variantes,
+    };
+    const products = editingProduct ? content.products.map(p => p.id === product.id ? product : p) : [...content.products, product];
+    saveContent({ ...content, products });
+    onSave();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 border space-y-6">
+      <h2 className="text-lg font-serif font-bold">{editingProduct ? "Modifier" : "Nouveau produit"}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Nom *</label><input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm" required /></div>
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Marque</label><input type="text" value={form.brand} onChange={e => setForm({...form, brand: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm" /></div>
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Catégorie</label><select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm">{content.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Prix base</label><input type="number" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} className="w-full px-3 py-2 rounded-xl border text-sm" /></div>
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Devise</label><select value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm"><option value="XOF">F CFA</option><option value="EUR">€</option><option value="USD">$</option></select></div>
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Stock base</label><input type="number" value={form.stock} onChange={e => setForm({...form, stock: Number(e.target.value)})} className="w-full px-3 py-2 rounded-xl border text-sm" /></div>
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Badge</label><select value={form.badge} onChange={e => setForm({...form, badge: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm"><option>Nouveauté</option><option>Bestseller</option><option>Tendance</option></select></div>
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Matière</label><input type="text" value={form.material} onChange={e => setForm({...form, material: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm" /></div>
+        <div><label className="text-[10px] font-mono uppercase text-gray-500">Tailles</label><input type="text" value={form.sizes} onChange={e => setForm({...form, sizes: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm" /></div>
+        <div className="md:col-span-2"><label className="text-[10px] font-mono uppercase text-gray-500">Description</label><textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full px-3 py-2 rounded-xl border text-sm h-16" /></div>
+      </div>
+
+      {/* Variantes avec prix/stock */}
+      <div>
+        <label className="text-[10px] font-mono uppercase text-gray-500 block mb-2">Variantes (avec prix et stock)</label>
+        {form.variantes.map(v => (
+          <div key={v.label} className="bg-gray-50 rounded-xl p-3 mb-2">
+            <div className="flex justify-between mb-2"><span className="text-sm font-bold">{v.label}</span><button type="button" onClick={() => removeVariante(v.label)} className="text-red-400 text-xs">✕</button></div>
+            <div className="space-y-1 mb-2">
+              {v.options.map(o => (
+                <div key={o.name} className="flex items-center justify-between bg-white rounded-lg px-3 py-1 text-xs">
+                  <span className="font-medium">{o.name}</span>
+                  <span className="text-gray-500">{o.price?.toLocaleString()} F CFA</span>
+                  <span className={o.stock && o.stock > 0 ? "text-green-500" : "text-red-400"}>Stock: {o.stock || 0}</span>
+                  <button type="button" onClick={() => removeOption(v.label, o.name)} className="text-red-400">✕</button>
+                </div>
+              ))}
+            </div>
+            {activeVar === v.label ? (
+              <div className="grid grid-cols-3 gap-2">
+                <input type="text" value={newOptName} onChange={e => setNewOptName(e.target.value)} placeholder="Option" className="px-2 py-1 rounded border text-xs" />
+                <input type="number" value={newOptPrice} onChange={e => setNewOptPrice(Number(e.target.value))} placeholder="Prix" className="px-2 py-1 rounded border text-xs" />
+                <input type="number" value={newOptStock} onChange={e => setNewOptStock(Number(e.target.value))} placeholder="Stock" className="px-2 py-1 rounded border text-xs" />
+                <button type="button" onClick={() => addOption(v.label)} className="col-span-3 px-3 py-1 bg-[#E88D9E] text-white rounded text-xs">Ajouter</button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => { setActiveVar(v.label); setNewOptName(""); setNewOptPrice(0); setNewOptStock(0); }} className="text-xs text-[#E88D9E] hover:underline">+ Ajouter une option</button>
+            )}
+          </div>
+        ))}
+        <div className="flex gap-2">
+          <input type="text" value={newVarLabel} onChange={e => setNewVarLabel(e.target.value)} placeholder="Nouvelle variante" className="flex-1 px-3 py-2 rounded-xl border text-xs" />
+          <button type="button" onClick={addVariante} className="px-4 py-2 bg-[#2C2224] text-white rounded-xl text-xs">+</button>
+        </div>
+      </div>
+
+      {/* Visibilité */}
+      <div className="flex items-center gap-3">
+        <label className="text-[10px] font-mono uppercase text-gray-500">Visible</label>
+        <button type="button" onClick={() => setForm({...form, visible: !form.visible})} className={`w-12 h-6 rounded-full ${form.visible ? "bg-green-500" : "bg-gray-300"}`}><span className={`block w-5 h-5 bg-white rounded-full transition ${form.visible ? "ml-6" : "ml-0.5"}`} /></button>
+      </div>
+
+      {/* Images */}
+      <div><label className="text-[10px] font-mono uppercase text-gray-500 block mb-2">Images</label><input type="file" accept="image/*" ref={fileInputRef} onChange={handleUpload} className="hidden" multiple />
+        <div className="flex flex-wrap gap-3">{form.images.map((img,i)=><div key={i} className="relative w-20 h-20 rounded-xl border"><img src={img} className="w-full h-full object-cover"/><button onClick={()=>setForm({...form,images:form.images.filter((_,j)=>j!==i)})} className="absolute top-0 right-0 bg-red-400 text-white w-5 h-5 rounded-full text-[10px]">✕</button></div>)}<div onClick={()=>fileInputRef.current?.click()} className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer bg-gray-50">{uploading?<div className="w-6 h-6 border-2 border-[#E88D9E] border-t-transparent rounded-full animate-spin"/>:<span className="text-2xl text-gray-400">+</span>}</div></div>
+      </div>
+
+      <button type="submit" className="w-full bg-[#E88D9E] text-white py-3 rounded-2xl text-xs font-bold uppercase">{editingProduct ? "💾 Mettre à jour" : "✨ Ajouter"}</button>
+    </form>
+  );
+}
