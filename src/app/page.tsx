@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/context/StoreContext";
 import HeroSection from "@/components/sections/HeroSection";
 import FeaturedSlider from "@/components/sections/FeaturedSlider";
 import CatalogSection from "@/components/sections/CatalogSection";
@@ -9,15 +8,17 @@ import AboutSection from "@/components/sections/AboutSection";
 import ScrollToTop from "@/components/ui/ScrollToTop";
 
 export default function Home() {
-  const { updateKey } = useStore();
   const [activeCategory, setActiveCategory] = useState("all");
 
   return (
-    <main key={updateKey} className="flex-1 w-full">
+    <main className="flex-1 w-full">
       <HeroSection />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pt-10 space-y-16">
         <FeaturedSlider />
-        <CatalogSection activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+        <CatalogSection
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+        />
         <AboutSection />
       </div>
       <ScrollToTop />
