@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Product, VarianteOption, VarianteCombi, useStore } from "@/context/StoreContext";
 
 interface Props { editingProduct: Product | null; onSave: () => void; }
@@ -26,6 +26,28 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
     variantes: init.variantes || [],
   });
 
+  // Recharger le formulaire quand editingProduct change
+  useEffect(() => {
+    if (editingProduct) {
+      setForm({
+        brand: editingProduct.brand || "ANZY COLLECTION",
+        name: editingProduct.name || "",
+        category: editingProduct.category || "gaines",
+        badge: editingProduct.badge || "Nouveauté",
+        description: editingProduct.description || "",
+        price: editingProduct.price || 0,
+        currency: editingProduct.currency || "XOF",
+        material: editingProduct.material || "",
+        sizes: (editingProduct.sizes || []).join(", "),
+        images: editingProduct.images || [],
+        stock: editingProduct.stock || 0,
+        visible: editingProduct.visible !== undefined ? editingProduct.visible : true,
+        options: editingProduct.options || [],
+        variantes: editingProduct.variantes || [],
+      });
+    }
+  }, [editingProduct]);
+
   const [newOptionName, setNewOptionName] = useState("");
   const [newValueInputs, setNewValueInputs] = useState<Record<number, string>>({});
   const [uploadingMain, setUploadingMain] = useState(false);
@@ -34,51 +56,56 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
     const f = e.target.files?.[0]; if (!f) return;
     setUploadingMain(true);
     const r = new FileReader();
-    r.onloadend = () => { setForm({...form, images: [r.result as string, ...form.images.slice(1)]}); setUploadingMain(false); };
+    r.onloadend = () => { setForm({ ...form, images: [r.result as string, ...form.images.slice(1)] }); setUploadingMain(false); };
     r.readAsDataURL(f);
   };
 
   const addOption = (e?: React.MouseEvent) => {
-    if (e) e.preventDefault(); // Empêche la soumission du formulaire
+    if (e) e.preventDefault();
     if (!newOptionName.trim() || form.options.length >= 3) return;
-    setForm({...form, options: [...form.options, { name: newOptionName.trim(), values: [] }]});
+    setForm({ ...form, options: [...form.options, { name: newOptionName.trim(), values: [] }] });
     setNewOptionName("");
   };
 
   const removeOption = (idx: number) => { 
-    setForm({...form, options: form.options.filter((_, i) => i !== idx)}); 
+    setForm({ ...form, options: form.options.filter((_, i) => i !== idx) }); 
   };
 
   const addValue = (optIdx: number, e?: React.MouseEvent | React.KeyboardEvent) => {
-    if (e) e.preventDefault(); // Empêche la soumission du formulaire
+    if (e) e.preventDefault();
     const val = newValueInputs[optIdx]?.trim(); if (!val) return;
     const opts = [...form.options];
     if (!opts[optIdx].values.includes(val)) { 
       opts[optIdx].values.push(val); 
-      setForm({...form, options: opts}); 
+      setForm({ ...form, options: opts }); 
     }
-    setNewValueInputs({...newValueInputs, [optIdx]: ""});
+    setNewValueInputs({ ...newValueInputs, [optIdx]: "" });
   };
 
   const removeValue = (optIdx: number, valIdx: number) => {
     const opts = [...form.options]; 
     opts[optIdx].values.splice(valIdx, 1); 
-    setForm({...form, options: opts});
+    setForm({ ...form, options: opts });
   };
 
+  // Générer ou Régénérer les variantes
   const generateVariantes = (e?: React.MouseEvent) => {
-    if (e) e.preventDefault(); // Empêche la soumission du formulaire
+    if (e) e.preventDefault();
     if (form.options.length === 0 || form.options.some(o => o.values.length === 0)) return;
     const combos: VarianteCombi[] = [];
     const recurse = (idx: number, current: Record<string, string>) => {
       if (idx === form.options.length) { 
+        // Conserver les prix existants si la variante existait déjà
+        const existingKey = Object.values(current).join("-");
+        const found = form.variantes.find(v => Object.values(v.combo).join("-") === existingKey);
+
         combos.push({ 
-          id: "v" + Date.now() + Math.random().toString(36).substr(2, 4), 
+          id: found?.id || "v" + Date.now() + Math.random().toString(36).substr(2, 4), 
           combo: { ...current }, 
-          price: form.price, 
-          stock: form.stock || 10, 
-          image: form.images[0] || "", 
-          active: true 
+          price: found?.price !== undefined ? found.price : form.price, 
+          stock: found?.stock !== undefined ? found.stock : (form.stock || 10), 
+          image: found?.image || form.images[0] || "", 
+          active: found?.active !== undefined ? found.active : true 
         }); 
         return; 
       }
@@ -89,7 +116,10 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
   };
 
   const updateVariante = (id: string, field: string, value: any) => { 
-    setForm({ ...form, variantes: form.variantes.map(v => v.id === id ? { ...v, [field]: value } : v) }); 
+    setForm({ 
+      ...form, 
+      variantes: form.variantes.map(v => v.id === id ? { ...v, [field]: value } : v) 
+    }); 
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -110,7 +140,7 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
       stock: Number(form.stock), 
       visible: form.visible,
       options: form.options, 
-      variantes: form.variantes.filter(v => v.active),
+      variantes: form.variantes, // Sauvegarde TOUTES les variantes configurées
     };
 
     const products = editingProduct 
@@ -141,7 +171,6 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
           </select>
         </div>
 
-        {/* IMAGE PRINCIPALE */}
         <div>
           <label className="text-[10px] font-mono uppercase text-gray-500 block mb-1">📸 Image principale</label>
           <input type="file" accept="image/*" ref={mainImageRef} onChange={handleMainImage} className="hidden" />
@@ -152,9 +181,8 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
           </div>
         </div>
 
-        {/* PRIX ET STOCK SANS LE BUG DU 0 */}
         <div>
-          <label className="text-[10px] font-mono uppercase text-gray-500">Prix de base (F CFA)</label>
+          <label className="text-[10px] font-mono uppercase text-gray-500">Prix par défaut (F CFA)</label>
           <input 
             type="number" 
             value={form.price === 0 ? "" : form.price} 
@@ -164,7 +192,7 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
           />
         </div>
         <div>
-          <label className="text-[10px] font-mono uppercase text-gray-500">Stock</label>
+          <label className="text-[10px] font-mono uppercase text-gray-500">Stock global</label>
           <input 
             type="number" 
             value={form.stock === 0 ? "" : form.stock} 
@@ -196,7 +224,7 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
         </div>
       </div>
 
-      {/* BLOC OPTIONS (AVEC type="button" POUR ÉVITER DE FERMER LE FORMULAIRE) */}
+      {/* OPTIONS DU PRODUIT */}
       <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
         <label className="text-[10px] font-mono uppercase text-gray-500 block">Options du produit (max 3)</label>
         {form.options.map((opt, i) => (
@@ -236,46 +264,54 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
               placeholder="Ex: Couleur, Poids, Contenance..." 
               className="flex-1 px-3 py-2 rounded-xl border text-xs" 
             />
-            <button type="button" onClick={e => addOption(e)} className="px-4 py-2 bg-[#2C2224] text-white rounded-xl text-xs font-bold">+ Ajouter</button>
+            <button type="button" onClick={e => addOption(e)} className="px-4 py-2 bg-[#2C2224] text-white rounded-xl text-xs font-bold">+ Ajouter une option</button>
           </div>
         )}
 
         {form.options.length > 0 && (
-          <button type="button" onClick={e => generateVariantes(e)} className="w-full py-2.5 bg-[#E88D9E] text-white rounded-xl text-xs font-bold uppercase">
-            🔄 Générer les variantes
+          <button type="button" onClick={e => generateVariantes(e)} className="w-full py-2.5 bg-[#E88D9E] text-white rounded-xl text-xs font-bold uppercase shadow-sm">
+            🔄 {form.variantes.length > 0 ? "Ré-générer les combinaisons de variantes" : "Générer les variantes"}
           </button>
         )}
       </div>
 
-      {/* TABLEAU DES VARIANTES */}
+      {/* TABLEAU ET MODIFICATION DES PRIX INDIVIDUELS PAR VARIANTE */}
       {form.variantes.length > 0 && (
-        <div>
-          <label className="text-[10px] font-mono uppercase text-gray-500 block mb-2">{form.variantes.length} variante(s) générée(s)</label>
+        <div className="bg-white rounded-2xl p-4 border border-[#E88D9E]/30 space-y-3">
+          <div className="flex justify-between items-center">
+            <label className="text-xs font-bold text-[#2C2224] uppercase">
+              ⚙️ PRIX & STOCKS SPÉCIFIQUES PAR VARIANTE ({form.variantes.length})
+            </label>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-gray-50">
+              <thead className="bg-[#FAF7F5]">
                 <tr>
                   <th className="p-2 text-left">Actif</th>
-                  <th className="p-2 text-left">Variante</th>
-                  <th className="p-2 text-left">Prix</th>
+                  <th className="p-2 text-left">Combinaison</th>
+                  <th className="p-2 text-left">Prix Spécifique (F CFA)</th>
                   <th className="p-2 text-left">Stock</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100">
                 {form.variantes.map(v => (
-                  <tr key={v.id} className={`border-t ${v.active ? "" : "opacity-40"}`}>
+                  <tr key={v.id} className={`${v.active ? "" : "opacity-40 bg-gray-50"}`}>
                     <td className="p-2">
                       <button type="button" onClick={() => updateVariante(v.id, "active", !v.active)} className={`w-8 h-5 rounded-full ${v.active ? "bg-green-500" : "bg-gray-300"}`}>
                         <span className={`block w-4 h-4 bg-white rounded-full transition ${v.active ? "ml-3.5" : "ml-0.5"}`} />
                       </button>
                     </td>
-                    <td className="p-2 font-medium">{Object.values(v.combo).join(" / ")}</td>
+                    <td className="p-2 font-bold text-[#2C2224]">
+                      {Object.entries(v.combo).map(([k, val]) => `${k}: ${val}`).join(" | ")}
+                    </td>
                     <td className="p-2">
                       <input 
                         type="number" 
                         value={v.price === 0 ? "" : v.price} 
                         onChange={e => updateVariante(v.id, "price", e.target.value === "" ? 0 : Number(e.target.value))} 
-                        className="w-20 px-2 py-1 rounded border text-xs" 
+                        className="w-28 px-2 py-1.5 rounded-lg border border-gray-300 font-bold text-xs" 
+                        placeholder="Prix en CFA"
                       />
                     </td>
                     <td className="p-2">
@@ -283,7 +319,8 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
                         type="number" 
                         value={v.stock === 0 ? "" : v.stock} 
                         onChange={e => updateVariante(v.id, "stock", e.target.value === "" ? 0 : Number(e.target.value))} 
-                        className="w-16 px-2 py-1 rounded border text-xs" 
+                        className="w-20 px-2 py-1.5 rounded-lg border border-gray-300 text-xs" 
+                        placeholder="Stock"
                       />
                     </td>
                   </tr>
@@ -301,9 +338,8 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
         </button>
       </div>
 
-      {/* SEUL ET UNIQUE BOUTON DE SOUMISSION DU FORMULAIRE */}
       <button type="submit" className="w-full bg-[#E88D9E] text-white py-3.5 rounded-2xl text-xs font-bold uppercase shadow-md hover:bg-[#d67b8c] transition">
-        {editingProduct ? "💾 Mettre à jour" : "✨ Ajouter le produit"}
+        {editingProduct ? "💾 Mettre à jour et enregistrer sur Neon" : "✨ Ajouter le produit"}
       </button>
     </form>
   );
