@@ -6,7 +6,7 @@ import CartDrawer from "@/components/ui/CartDrawer";
 
 export default function Header() {
   const { langue, devise, setLangue, setDevise } = useStore();
-  const [cartCount] = useState(2);
+  const [cartCount] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
 
   return (
