@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { getStoreData, saveStoreContentAction } from "@/app/actions/store";
 
 export interface VarianteOption { name: string; values: string[]; }
 export interface VarianteCombi { id: string; combo: Record<string, string>; price: number; stock: number; image: string; active: boolean; }
@@ -14,7 +15,7 @@ export interface Category { id: string; name: string; visible: boolean; }
 export type Langue = "fr" | "en" | "es" | "pt";
 export type Devise = "EUR" | "XOF" | "USD";
 
-interface SiteContent {
+export interface SiteContent {
   hero: { title: string; subtitle: string; cta: string; images: string[]; badge: string };
   about: { title: string; subtitle: string; paragraph1: string; paragraph2: string; image: string; stats: { value: string; label: string }[] };
   footer: { copyright: string; links: { label: string; url: string }[] };
@@ -28,15 +29,10 @@ const defaultContent: SiteContent = {
   about: { title: "L'élégance à la française", subtitle: "Notre Histoire", paragraph1: "Fondée par Helena Mcneil.", paragraph2: "Chaque pièce sublime la femme moderne.", image: "", stats: [] },
   footer: { copyright: "© 2026 Anzy Collection.", links: [] },
   social: { instagram: "", tiktok: "", facebook: "" },
-  categories: [
-    { id: "protheses", name: "Prothèses", visible: true }, { id: "gaines", name: "Gaines", visible: true },
-    { id: "fesses", name: "Fesses en Chiffon", visible: true }, { id: "vetements", name: "Vêtements", visible: true },
-    { id: "huiles", name: "Huiles Essentielles", visible: true }, { id: "thes", name: "Thés & Infusions", visible: true }, { id: "skincare", name: "Skincare", visible: true },
-  ],
+  categories: [],
   products: []
 };
 
-const STORAGE_KEY = "anzy-content-v3";
 const symbolesDevises: Record<string, string> = { EUR: "€", XOF: "F CFA", USD: "$" };
 const tauxConversion: Record<string, Record<string, number>> = { EUR: { EUR: 1, XOF: 655.96, USD: 1.08 }, XOF: { EUR: 0.0015, XOF: 1, USD: 0.0016 }, USD: { EUR: 0.93, XOF: 609, USD: 1 } };
 
@@ -44,65 +40,71 @@ interface StoreContextType {
   content: SiteContent; saveContent: (c: SiteContent) => void;
   langue: Langue; devise: Devise; setLangue: (l: Langue) => void; setDevise: (d: Devise) => void;
   convertirPrix: (p: number) => number; symboleDevise: string; t: (key: string) => string;
+  loading: boolean;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-function loadFromStorage(): SiteContent | null {
-  if (typeof window === "undefined") return null;
-  try { const s = localStorage.getItem(STORAGE_KEY); if (s) { const p = JSON.parse(s); if (p.categories?.length > 0) return p; } } catch(e) {}
-  return null;
-}
-
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [content, setContent] = useState<SiteContent>(() => loadFromStorage() || defaultContent);
+  const [content, setContent] = useState<SiteContent>(defaultContent);
   const [langue, setLangue] = useState<Langue>("fr");
   const [devise, setDevise] = useState<Devise>("XOF");
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Chargement initial
-  useEffect(() => {
-    const stored = loadFromStorage();
-    if (stored) setContent(stored);
-    setLoaded(true);
-  }, []);
+  // Synchronisation avec Neon au démarrage
+ useEffect(() => {
+  let isMounted = true;
 
-  // Listener storage (cross-onglet)
-  useEffect(() => {
-    const h = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue) {
-        try { const p = JSON.parse(e.newValue); if (p.categories?.length > 0) setContent(p); } catch {}
+  async function loadData() {
+    try {
+      const data = await getStoreData();
+      if (data && isMounted) {
+        setContent({
+          categories: data.categories || [],
+          products: (data.products as Product[]) || [],
+          hero: data.content?.hero ? (data.content.hero as any) : defaultContent.hero,
+          about: data.content?.about ? (data.content.about as any) : defaultContent.about,
+          footer: data.content?.footer ? (data.content.footer as any) : defaultContent.footer,
+          social: data.content?.social ? (data.content.social as any) : defaultContent.social,
+        });
       }
-    };
-    window.addEventListener("storage", h);
-    return () => window.removeEventListener("storage", h);
+    } catch (err) {
+      console.error("Erreur de chargement du store :", err);
+    } finally {
+      if (isMounted) setLoading(false);
+    }
+  }
+
+  loadData();
+
+  return () => {
+    isMounted = false;
+  };
+}, []);
+
+  // Sauvegarde dans Neon
+  const saveContent = useCallback(async (newContent: SiteContent) => {
+    setContent(newContent); // Mise à jour réactive immédiate de l'interface
+    try {
+      await saveStoreContentAction(newContent);
+    } catch (err) {
+      console.error("Erreur lors de la sauvegarde sur Neon :", err);
+    }
   }, []);
 
-  // Recharger quand l'onglet reprend le focus
-  useEffect(() => {
-    const onFocus = () => {
-      const stored = loadFromStorage();
-      if (stored) setContent(stored);
-    };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, []);
-
-  const saveContent = useCallback((c: SiteContent) => {
-    setContent(c);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
-  }, []);
-
-  const convertirPrix = (prix: number) => Math.round(prix * (tauxConversion["XOF"]?.[devise] || 1));
+  const convertirPrix = (prix: number) => Math.round((prix || 0) * (tauxConversion["XOF"]?.[devise] || 1));
   const symboleDevise = symbolesDevises[devise] || "F CFA";
   const t = (key: string) => key;
-  if (!loaded) return null;
 
   return (
-    <StoreContext.Provider value={{ content, saveContent, langue, devise, setLangue, setDevise, convertirPrix, symboleDevise, t }}>
+    <StoreContext.Provider value={{ content, saveContent, langue, devise, setLangue, setDevise, convertirPrix, symboleDevise, t, loading }}>
       {children}
     </StoreContext.Provider>
   );
 }
 
-export function useStore() { const c = useContext(StoreContext); if (!c) throw new Error("useStore error"); return c; }
+export function useStore() { 
+  const c = useContext(StoreContext); 
+  if (!c) throw new Error("useStore doit être utilisé à l'intérieur d'un StoreProvider"); 
+  return c; 
+}
