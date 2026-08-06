@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Product, useStore } from "@/context/StoreContext";
 import useCart from "@/context/CartContext";
+import ProductDescription from "./ProductDescription";
+import VariantSelector from "./VariantSelector";
 
 interface ProductDrawerProps {
   product: Product;
@@ -106,7 +108,6 @@ export default function ProductDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Overlay Sombre Flouté */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
         onClick={onClose}
@@ -115,7 +116,6 @@ export default function ProductDrawer({
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
         <div className="w-screen max-w-sm sm:max-w-md bg-[#FAF7F5] shadow-2xl flex flex-col justify-between text-[#2C2224] animate-in slide-in-from-right duration-300 border-l border-white/60">
           
-          {/* EN-TÊTE ÉPURÉ */}
           <div className="px-6 py-4 flex items-center justify-between border-b border-[#E88D9E]/15 bg-white/70 backdrop-blur-md sticky top-0 z-20">
             <div>
               <span className="text-[8px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase font-semibold block">
@@ -132,15 +132,12 @@ export default function ProductDrawer({
             </button>
           </div>
 
-          {/* ZONE SCROLLABLE AVEC RESPIRATION ET TYPO RAFFINÉE */}
-          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 pb-28">
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 pb-28">
             
-            {/* IMAGE DÉLICATE */}
             <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-2xs aspect-[4/5] max-w-[280px] mx-auto">
               <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
             </div>
 
-            {/* TITRE SOIGNÉ & PRIX DISCRET */}
             <div className="space-y-1.5 text-center sm:text-left border-b border-[#E88D9E]/15 pb-4">
               <h2 className="text-base font-serif font-normal text-[#2C2224] leading-snug tracking-wide">
                 {product.name}
@@ -159,47 +156,14 @@ export default function ProductDrawer({
               </div>
             </div>
 
-            {/* CHOIX DES VARIANTES ÉLÉGANT */}
             {variantes.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">
-                  TAILLE / OPTION
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {variantes.map((v: any, idx: number) => {
-                    const label = getVarianteLabel(v);
-                    const isSelected = selectedVariante?.id === v.id || (!selectedVariante && idx === 0);
-                    return (
-                      <button
-                        key={v.id || idx}
-                        type="button"
-                        onClick={() => setSelectedVariante(v)}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-mono transition border cursor-pointer ${
-                          isSelected
-                            ? "bg-[#2C2224] text-white border-[#2C2224] font-medium shadow-2xs"
-                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <VariantSelector
+                variantes={variantes}
+                selectedVariante={selectedVariante}
+                onSelectVariante={setSelectedVariante}
+              />
             )}
 
-            {/* DESCRIPTION AÉRÉE */}
-            <div className="space-y-1">
-              <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">
-                DESCRIPTION
-              </span>
-              <p className="text-[11px] font-sans font-light text-gray-500 leading-relaxed">
-                {product.description ||
-                  "Conçue pour garantir un maintien subtil et invisible sous vos tenues, alliant aisance et raffinement."}
-              </p>
-            </div>
-
-            {/* QUANTITÉ MINIMALISTE */}
             <div className="space-y-1.5">
               <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">
                 QUANTITÉ
@@ -223,7 +187,8 @@ export default function ProductDrawer({
               </div>
             </div>
 
-            {/* SECTION AVIS CLIENTS FINEMENT CADRÉE */}
+            <ProductDescription description={product.description || ""} />
+
             <div className="pt-4 border-t border-[#E88D9E]/15 space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium">
@@ -308,7 +273,6 @@ export default function ProductDrawer({
 
           </div>
 
-          {/* FOOTER FIXE AVEC BOUTON FIN & CHIC */}
           <div className="p-5 bg-white/95 backdrop-blur-xl border-t border-[#E88D9E]/15 sticky bottom-0 z-20 shadow-lg">
             <button
               type="button"
