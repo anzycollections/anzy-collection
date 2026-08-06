@@ -27,13 +27,13 @@ export default function HeroSection() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Défilement automatique avec fondu toutes les 5 secondes
+  // Défilement automatique avec fondu toutes les 2 secondes
   useEffect(() => {
     if (images.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 5000);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [images.length]);
@@ -86,11 +86,11 @@ export default function HeroSection() {
             {subtitle}
           </p>
 
-          {/* BOUTON D'ACTION */}
-          <div className="pt-2">
+          {/* BOUTON D'ACTION COMPACT & ÉLÉGANT */}
+          <div className="pt-1">
             <button
               onClick={scrollToCatalog}
-              className="px-8 py-4 rounded-2xl bg-[#2C2224] hover:bg-[#3d3033] text-white text-xs font-mono font-semibold tracking-wider uppercase shadow-lg transition-all transform active:scale-95 cursor-pointer flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-[#E88D9E] hover:bg-[#2C2224] text-white font-mono text-[11px] font-bold tracking-[0.15em] uppercase shadow-md hover:shadow-lg transition-all duration-300 transform active:scale-95 cursor-pointer inline-flex items-center gap-1.5 border border-white/20"
             >
               {buttonText}
             </button>
