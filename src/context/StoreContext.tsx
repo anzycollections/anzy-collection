@@ -27,6 +27,7 @@ export interface Product {
   brand?: string;
   name: string;
   categoryId?: string | null;
+  category?: string | null; // 👈 Champ ajouté pour compatibilité avec ProductForm
   badge?: string | null;
   description?: string | null;
   price: number | string;
