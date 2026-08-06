@@ -4,54 +4,57 @@ import { useStore } from "@/context/StoreContext";
 
 export default function AboutSection() {
   const { content } = useStore();
-  const about = content?.about;
+  const about = content?.about || {};
 
-  if (!content || !about) {
-    return null;
-  }
+  const mainImage = about.image || "/images/about-main.jpg";
+  const subtitle = about.subtitle || "SAVOIR-FAIRE & ÉLÉGANCE";
+  const title = about.title || "L'UNIVERS ANZY COLLECTION";
+  const founderName = about.founderName || "Mme Meryem B. GBOSSA";
+  const founderRole = about.founderRole || "Fondatrice de Anzy Collection";
+  const quote =
+    about.quote ||
+    "« Célébrer la beauté au naturel à travers la richesse de nos traditions. »";
+  const description =
+    about.description ||
+    "Fondée par une jeune entrepreneure africaine passionnée, Anzy Collection est née de la volonté de proposer des soins d'exception, sans additifs ni produits chimiques, façonnés pour sublimer le corps avec patience et discipline.";
 
   return (
-    <section id="about" className="space-y-8 scroll-mt-20 pt-8 border-t border-[#E88D9E]/15">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <section className="pt-2 pb-2 text-[#2C2224] overflow-hidden">
+      <div className="max-w-2xl mx-auto px-4 text-center space-y-4">
         
-        {/* Texte de présentation */}
-        <div className="space-y-6">
-          <div>
-            <span className="text-[10px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase font-bold block mb-1">
-              {about.subtitle || "Savoir-Faire & Élégance"}
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-serif font-bold text-[#2C2224] leading-tight">
-              {about.title || "L'Univers Anzy Collection"}
-            </h2>
-          </div>
-
-          <div className="space-y-4 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
-            {about.paragraph1 && <p>{about.paragraph1}</p>}
-            {about.paragraph2 && <p>{about.paragraph2}</p>}
-          </div>
-
-          <div className="pt-2">
-            <p className="text-xs font-serif italic text-[#E88D9E] tracking-wide">
-              Pureté & Traditions Ancestrales
-            </p>
+        {/* PETIT CERCLE AVATAR */}
+        <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-full p-1 bg-gradient-to-tr from-[#E88D9E] to-pink-100 shadow-md">
+          <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-white">
+            <img
+              src={mainImage}
+              alt={founderName}
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
 
-        {/* Visuel officiel de présentation */}
-        <div className="relative">
-          <div className="aspect-[4/3] rounded-3xl bg-white p-3 border border-[#E88D9E]/15 shadow-xl overflow-hidden">
-            {about.image ? (
-              <img
-                src={about.image}
-                alt={about.title || "Anzy Collection"}
-                className="w-full h-full object-cover rounded-2xl"
-              />
-            ) : (
-              <div className="w-full h-full bg-[#FAF7F5] rounded-2xl flex items-center justify-center text-gray-300">
-                <span className="text-4xl">📷</span>
-              </div>
-            )}
-          </div>
+        {/* TEXTES */}
+        <div className="space-y-2 pt-1">
+          <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-[#E88D9E] font-bold block">
+            {subtitle}
+          </span>
+
+          <h2 className="text-lg sm:text-2xl font-serif font-bold text-[#2C2224] leading-tight uppercase tracking-wide">
+            {title}
+          </h2>
+
+          <p className="text-xs font-serif text-gray-600">
+            <strong className="text-[#2C2224] font-semibold">{founderName}</strong>{" "}
+            <span className="font-sans font-light text-gray-500">— {founderRole}</span>
+          </p>
+
+          <p className="text-xs italic font-serif text-[#2C2224] max-w-lg mx-auto">
+            {quote}
+          </p>
+
+          <p className="text-xs font-sans leading-relaxed text-gray-600 font-light max-w-lg mx-auto">
+            {description}
+          </p>
         </div>
 
       </div>

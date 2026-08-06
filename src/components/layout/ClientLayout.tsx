@@ -1,25 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-// Importation corrigée vers le dossier ui :
-import CartDrawer from "@/components/ui/CartDrawer"; 
+import { usePathname } from "next/navigation";
+import Header from "./Header";
+import Footer from "./Footer";
+import ScrollToTop from "@/components/ui/ScrollToTop";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const pathname = usePathname();
+  const isAdmin = pathname?.startsWith("/admin");
+
+  if (isAdmin) {
+    return <main className="min-h-screen bg-[#FAF7F5]">{children}</main>;
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF7F5] text-[#2C2224] selection:bg-[#E88D9E] selection:text-white">
-      <Header onOpenCart={() => setIsCartOpen(true)} />
-      
-      <main className="flex-1">
-        {children}
-      </main>
-
+    <>
+      <Header />
+      <main>{children}</main>
       <Footer />
-
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-    </div>
+      <ScrollToTop /> {/* 👈 Ajouté ici */}
+    </>
   );
 }

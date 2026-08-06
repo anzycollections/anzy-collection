@@ -18,8 +18,8 @@ export default function Home() {
       {/* 1. Bannière Hero complète */}
       <HeroSection />
 
-      {/* 2. Conteneur des sections Vitrine */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-12 space-y-24">
+      {/* 2. Conteneur des sections Vitrine avec espacement réduit */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 sm:py-8 space-y-8 sm:space-y-12">
         
         {/* Section 1 : Pièces Iconiques */}
         <FeaturedSlider

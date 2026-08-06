@@ -4,7 +4,7 @@ import { useStore } from "@/context/StoreContext";
 import { useCart } from "@/context/CartContext";
 
 interface HeaderProps {
-  onOpenCart: () => void;
+  onOpenCart?: () => void; // 👈 Ajouter le '?' ici
 }
 
 export default function Header({ onOpenCart }: HeaderProps) {
