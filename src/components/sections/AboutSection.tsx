@@ -4,38 +4,56 @@ import { useStore } from "@/context/StoreContext";
 
 export default function AboutSection() {
   const { content } = useStore();
-  const about = content.about;
+  const about = content?.about;
+
+  if (!content || !about) {
+    return null;
+  }
 
   return (
-    <section className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div className="flex justify-center">
-          <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden bg-[#F3C5CD]/20 border-4 border-[#E88D9E]/20 shadow-xl">
+    <section id="about" className="space-y-8 scroll-mt-20 pt-8 border-t border-[#E88D9E]/15">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        
+        {/* Texte de présentation */}
+        <div className="space-y-6">
+          <div>
+            <span className="text-[10px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase font-bold block mb-1">
+              {about.subtitle || "Savoir-Faire & Élégance"}
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-serif font-bold text-[#2C2224] leading-tight">
+              {about.title || "L'Univers Anzy Collection"}
+            </h2>
+          </div>
+
+          <div className="space-y-4 text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
+            {about.paragraph1 && <p>{about.paragraph1}</p>}
+            {about.paragraph2 && <p>{about.paragraph2}</p>}
+          </div>
+
+          <div className="pt-2">
+            <p className="text-xs font-serif italic text-[#E88D9E] tracking-wide">
+              Pureté & Traditions Ancestrales
+            </p>
+          </div>
+        </div>
+
+        {/* Visuel officiel de présentation */}
+        <div className="relative">
+          <div className="aspect-[4/3] rounded-3xl bg-white p-3 border border-[#E88D9E]/15 shadow-xl overflow-hidden">
             {about.image ? (
-              <img src={about.image} alt="À propos" className="w-full h-full object-cover" />
+              <img
+                src={about.image}
+                alt={about.title || "Anzy Collection"}
+                className="w-full h-full object-cover rounded-2xl"
+              />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300 text-5xl">📷</div>
+              <div className="w-full h-full bg-[#FAF7F5] rounded-2xl flex items-center justify-center text-gray-300">
+                <span className="text-4xl">📷</span>
+              </div>
             )}
           </div>
         </div>
-        <div className="space-y-4 text-center md:text-left">
-          <div>
-            <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase block font-semibold">{about.subtitle}</span>
-            <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#2C2224] mt-1">{about.title}</h2>
-          </div>
-          <p className="text-sm text-gray-600 leading-relaxed font-light">{about.paragraph1}</p>
-          <p className="text-sm text-gray-600 leading-relaxed font-light">{about.paragraph2}</p>
-          {about.stats && about.stats.length > 0 && (
-            <div className="flex justify-center md:justify-start space-x-8 pt-2">
-              {about.stats.map((stat, idx) => (
-                <div key={idx}>
-                  <p className="text-2xl font-serif font-bold text-[#E88D9E]">{stat.value}</p>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+
       </div>
     </section>
   );

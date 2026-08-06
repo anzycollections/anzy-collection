@@ -10,9 +10,26 @@ export async function getStoreData() {
   try {
     await seedInitialData();
 
-    const dbCategories = await db.select().from(categories);
-    const dbProducts = await db.select().from(products);
-    const dbContent = await db.select().from(siteContent).where(eq(siteContent.key, "main_config"));
+    let dbCategories: any[] = [];
+    let dbProducts: any[] = [];
+    let dbContent: any[] = [];
+
+    // Chargement indépendant : une erreur sur une table ne bloque pas les autres
+    try {
+      dbCategories = await db.select().from(categories);
+    } catch (e) {
+      console.error("Erreur chargement catégories:", e);
+    }
+    try {
+      dbProducts = await db.select().from(products);
+    } catch (e) {
+      console.error("Erreur chargement produits:", e);
+    }
+    try {
+      dbContent = await db.select().from(siteContent).where(eq(siteContent.key, "main_config"));
+    } catch (e) {
+      console.error("Erreur chargement site_content:", e);
+    }
 
     const rawContent = dbContent[0];
 
@@ -22,7 +39,7 @@ export async function getStoreData() {
         id: p.id,
         brand: p.brand,
         name: p.name,
-        category: p.categoryId || "", // <-- ALIAS : transforme categoryId en category pour l'UI
+        category: p.categoryId || "",
         badge: p.badge || "Nouveauté",
         description: p.description || "",
         price: Number(p.price),
@@ -44,9 +61,10 @@ export async function getStoreData() {
       } : null,
     };
   } catch (error) {
-    console.error("Erreur lors de la récupération Neon:", error);
-    return null;
-  }
+    console.error("Erreur globale dans getStoreData:", error);
+    return { error: String(error) };// ← à changer temporairement
+}
+
 }
 
 export async function saveStoreContentAction(newContent: any) {

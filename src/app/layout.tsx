@@ -1,19 +1,23 @@
-import type { Metadata } from "next";
 import "./globals.css";
 import { StoreProvider } from "@/context/StoreContext";
+import { CartProvider } from "@/context/CartContext";
 import ClientLayout from "@/components/layout/ClientLayout";
 
-export const metadata: Metadata = {
-  title: "Anzy Collection",
-  description: "ELEVATED FEMININE FASHION & ESSENTIALS",
+export const metadata = {
+  title: "Anzy Collection — Maison de Beauté & Gaines",
+  description: "Pureté & Traditions Ancestrales",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className="h-full">
-      <body className="min-h-screen flex flex-col bg-[#FAF7F5] text-[#2C2224] font-sans selection:bg-[#E88D9E] selection:text-white">
+    <html lang="fr">
+      <body className="bg-[#FAF7F5] text-[#2C2224] antialiased">
         <StoreProvider>
-          <ClientLayout>{children}</ClientLayout>
+          <CartProvider>
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </CartProvider>
         </StoreProvider>
       </body>
     </html>

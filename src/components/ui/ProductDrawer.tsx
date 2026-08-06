@@ -2,127 +2,326 @@
 
 import { useState } from "react";
 import { Product, useStore } from "@/context/StoreContext";
+import useCart from "@/context/CartContext";
 
 interface ProductDrawerProps {
   product: Product;
   onClose: () => void;
-  cartCount: number;
-  setCartCount: (count: number) => void;
+  initialVarianteId?: string;
+  initialQuantity?: number;
 }
 
-export default function ProductDrawer({ product, onClose, cartCount, setCartCount }: ProductDrawerProps) {
-  const { convertirPrix, symboleDevise } = useStore();
-  const hasOptions = product.options && product.options.length > 0;
-  const activeVariantes = (product.variantes || []).filter(v => v.active);
+interface Review {
+  id: string;
+  author: string;
+  rating: number;
+  date: string;
+  comment: string;
+}
 
-  // Valeurs sélectionnées par défaut
-  const [selected, setSelected] = useState<Record<string, string>>(() => {
-    if (activeVariantes.length > 0) {
-      return activeVariantes[0].combo;
-    }
-    const init: Record<string, string> = {};
-    (product.options || []).forEach(opt => {
-      if (opt.values && opt.values.length > 0) {
-        init[opt.name] = opt.values[0];
-      }
-    });
-    return init;
-  });
+export default function ProductDrawer({
+  product,
+  onClose,
+  initialVarianteId,
+  initialQuantity = 1,
+}: ProductDrawerProps) {
+  const store = useStore() as any;
+  const convertirPrix = store?.convertirPrix || ((p: number) => p);
+  const symboleDevise = store?.symboleDevise || "F CFA";
+  const { addToCart } = useCart();
 
-  // Trouver la variante correspondante
-  const currentVariante = activeVariantes.find(v =>
-    Object.entries(selected).every(([key, val]) => v.combo[key] === val)
+  const variantes = product.variantes || [];
+  const [selectedVariante, setSelectedVariante] = useState<any>(
+    variantes.find((v: any) => v.id === initialVarianteId) || variantes[0] || null
   );
+  const [quantity, setQuantity] = useState(initialQuantity);
 
-  const prixAffiche = currentVariante ? convertirPrix(currentVariante.price) : convertirPrix(product.price);
-  const stockAffiche = currentVariante ? currentVariante.stock : product.stock;
-  const imageAffiche = currentVariante?.image || (product.images && product.images[0]) || "";
+  const [reviews, setReviews] = useState<Review[]>([
+    {
+      id: "1",
+      author: "Aïcha K.",
+      rating: 5,
+      date: "02/08/2026",
+      comment: "Qualité exceptionnelle ! Confortable au quotidien.",
+    },
+    {
+      id: "2",
+      author: "Sonia M.",
+      rating: 5,
+      date: "28/07/2026",
+      comment: "Finition parfaite, rendu très naturel sous les vêtements.",
+    },
+  ]);
 
-  const formatPrix = () => {
-    if (symboleDevise === "F CFA") return `${prixAffiche.toLocaleString()} F CFA`;
-    return `${symboleDevise} ${prixAffiche.toLocaleString()}`;
+  const [newRating, setNewRating] = useState(5);
+  const [newAuthor, setNewAuthor] = useState("");
+  const [newComment, setNewComment] = useState("");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  const mainImage =
+    product.images && product.images.length > 0
+      ? product.images[0]
+      : "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&q=80";
+
+  const currentPrice = selectedVariante?.price || product.price || 0;
+  const priceFormatted = convertirPrix(currentPrice * quantity).toLocaleString();
+
+  const getVarianteLabel = (v: any) => {
+    if (!v) return "Standard";
+    if (v.combo) return Object.values(v.combo).join(" / ");
+    return v.name || v.title || "Option";
   };
 
-  const handleOptionClick = (optionName: string, value: string) => {
-    setSelected(prev => ({ ...prev, [optionName]: value }));
+  const handleAddToCart = () => {
+    addToCart({
+      productId: product.id,
+      productName: product.name,
+      varianteId: selectedVariante?.id || "default",
+      varianteName: getVarianteLabel(selectedVariante),
+      price: currentPrice,
+      quantity,
+      image: mainImage,
+    });
+    onClose();
+  };
+
+  const handleAddReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAuthor.trim() || !newComment.trim()) return;
+
+    setReviews([
+      {
+        id: Date.now().toString(),
+        author: newAuthor,
+        rating: newRating,
+        date: new Date().toLocaleDateString("fr-FR"),
+        comment: newComment,
+      },
+      ...reviews,
+    ]);
+    setNewAuthor("");
+    setNewComment("");
+    setShowReviewForm(false);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
-      <div className="bg-white w-full max-w-xl h-full overflow-y-auto p-6 sm:p-10 flex flex-col justify-between shadow-2xl relative">
-        <button onClick={onClose}
-          className="absolute top-6 right-6 w-10 h-10 rounded-full bg-[#FAF7F5] border border-[#E88D9E]/20 flex items-center justify-center text-lg hover:bg-[#E88D9E] hover:text-white transition">
-          ✕
-        </button>
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* Overlay Sombre Flouté */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
+        onClick={onClose}
+      />
 
-        <div className="space-y-6">
-          <div>
-            <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase block font-semibold">{product.brand}</span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#2C2224] mt-1">{product.name}</h2>
-            <p className="text-xl font-semibold text-[#2C2224] mt-2">{formatPrix()}</p>
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
+        <div className="w-screen max-w-sm sm:max-w-md bg-[#FAF7F5] shadow-2xl flex flex-col justify-between text-[#2C2224] animate-in slide-in-from-right duration-300 border-l border-white/60">
+          
+          {/* EN-TÊTE ÉPURÉ */}
+          <div className="px-6 py-4 flex items-center justify-between border-b border-[#E88D9E]/15 bg-white/70 backdrop-blur-md sticky top-0 z-20">
+            <div>
+              <span className="text-[8px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase font-semibold block">
+                {product.brand || "ANZY COLLECTION"}
+              </span>
+              <h3 className="text-[10px] font-serif italic text-gray-400">Haute Couture</h3>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-7 h-7 rounded-full bg-white border border-gray-200/80 flex items-center justify-center text-gray-400 hover:text-[#2C2224] transition cursor-pointer shadow-2xs active:scale-95"
+            >
+              ✕
+            </button>
           </div>
 
-          <div className="bg-[#FAF7F5] rounded-3xl p-6 flex justify-center items-center h-72 border border-[#E88D9E]/20">
-            {imageAffiche ? (
-              <img src={imageAffiche} alt={product.name} className="max-h-full object-contain drop-shadow-md" />
-            ) : (
-              <span className="text-6xl text-gray-300">📷</span>
-            )}
-          </div>
+          {/* ZONE SCROLLABLE AVEC RESPIRATION ET TYPO RAFFINÉE */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 pb-28">
+            
+            {/* IMAGE DÉLICATE */}
+            <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-2xs aspect-[4/5] max-w-[280px] mx-auto">
+              <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+            </div>
 
-          <div className="space-y-2">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-[#E88D9E] font-semibold">Description</h4>
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed font-light">{product.description}</p>
-          </div>
+            {/* TITRE SOIGNÉ & PRIX DISCRET */}
+            <div className="space-y-1.5 text-center sm:text-left border-b border-[#E88D9E]/15 pb-4">
+              <h2 className="text-base font-serif font-normal text-[#2C2224] leading-snug tracking-wide">
+                {product.name}
+              </h2>
 
-          {/* SÉLECTEURS D'OPTIONS / VARIANTES */}
-          {hasOptions && product.options.map(opt => (
-            <div key={opt.name} className="space-y-2">
-              <h4 className="text-xs font-mono uppercase tracking-wider text-gray-500 font-semibold">
-                {opt.name} : <span className="text-[#2C2224]">{selected[opt.name] || "Non sélectionné"}</span>
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {opt.values.map(val => {
-                  const isSelected = selected[opt.name] === val;
-                  return (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => handleOptionClick(opt.name, val)}
-                      className={`px-4 py-2 rounded-xl text-xs font-medium border transition ${
-                        isSelected
-                          ? "bg-[#E88D9E] text-white border-[#E88D9E] shadow-sm"
-                          : "bg-white text-[#2C2224] border-gray-200 hover:border-[#E88D9E]"
-                      }`}>
-                      {val}
-                    </button>
-                  );
-                })}
+              <div className="flex items-center justify-center sm:justify-start gap-3 pt-0.5">
+                <span className="text-sm font-mono font-bold text-[#2C2224]">
+                  {convertirPrix(currentPrice).toLocaleString()} {symboleDevise}
+                </span>
+
+                <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-full border border-gray-100 text-[9px] font-mono">
+                  <span className="text-amber-400">★</span>
+                  <span className="font-semibold text-[#2C2224]">5.0</span>
+                  <span className="text-gray-400">({reviews.length})</span>
+                </div>
               </div>
             </div>
-          ))}
 
-          {/* INDICATEUR DE STOCK */}
-          <div className="flex items-center gap-2 pt-2">
-            <span className={`w-3 h-3 rounded-full ${stockAffiche > 7 ? "bg-green-500" : stockAffiche > 0 ? "bg-orange-400" : "bg-red-400"}`} />
-            <span className="text-xs text-gray-500 font-medium">
-              {stockAffiche > 7 ? "En stock" : stockAffiche > 0 ? `Plus que ${stockAffiche} en stock` : "Rupture de stock"}
-            </span>
+            {/* CHOIX DES VARIANTES ÉLÉGANT */}
+            {variantes.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">
+                  TAILLE / OPTION
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {variantes.map((v: any, idx: number) => {
+                    const label = getVarianteLabel(v);
+                    const isSelected = selectedVariante?.id === v.id || (!selectedVariante && idx === 0);
+                    return (
+                      <button
+                        key={v.id || idx}
+                        type="button"
+                        onClick={() => setSelectedVariante(v)}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-mono transition border cursor-pointer ${
+                          isSelected
+                            ? "bg-[#2C2224] text-white border-[#2C2224] font-medium shadow-2xs"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* DESCRIPTION AÉRÉE */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">
+                DESCRIPTION
+              </span>
+              <p className="text-[11px] font-sans font-light text-gray-500 leading-relaxed">
+                {product.description ||
+                  "Conçue pour garantir un maintien subtil et invisible sous vos tenues, alliant aisance et raffinement."}
+              </p>
+            </div>
+
+            {/* QUANTITÉ MINIMALISTE */}
+            <div className="space-y-1.5">
+              <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">
+                QUANTITÉ
+              </span>
+              <div className="inline-flex items-center rounded-xl bg-white border border-gray-200 p-0.5 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 font-bold text-gray-500 text-xs flex items-center justify-center transition cursor-pointer"
+                >
+                  -
+                </button>
+                <span className="w-8 text-center font-mono text-xs font-semibold text-[#2C2224]">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 font-bold text-gray-500 text-xs flex items-center justify-center transition cursor-pointer"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* SECTION AVIS CLIENTS FINEMENT CADRÉE */}
+            <div className="pt-4 border-t border-[#E88D9E]/15 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium">
+                  AVIS ({reviews.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowReviewForm(!showReviewForm)}
+                  className="text-[9px] font-mono text-[#E88D9E] uppercase font-semibold hover:underline cursor-pointer"
+                >
+                  {showReviewForm ? "Fermer" : "+ Donnez votre avis"}
+                </button>
+              </div>
+
+              {showReviewForm && (
+                <form onSubmit={handleAddReview} className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-2.5 shadow-2xs">
+                  <div>
+                    <label className="text-[8px] font-mono text-gray-400 uppercase block mb-0.5">Prénom</label>
+                    <input
+                      type="text"
+                      required
+                      value={newAuthor}
+                      onChange={(e) => setNewAuthor(e.target.value)}
+                      placeholder="Marie L."
+                      className="w-full text-[11px] bg-gray-50 border border-gray-200 rounded-md p-1.5 focus:outline-none focus:border-[#E88D9E]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[8px] font-mono text-gray-400 uppercase block mb-0.5">Note</label>
+                    <div className="flex gap-1 text-sm cursor-pointer">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setNewRating(star)}
+                          className={star <= newRating ? "text-amber-400" : "text-gray-200"}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[8px] font-mono text-gray-400 uppercase block mb-0.5">Commentaire</label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Votre expérience..."
+                      className="w-full text-[11px] bg-gray-50 border border-gray-200 rounded-md p-1.5 focus:outline-none focus:border-[#E88D9E]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2 bg-[#2C2224] text-white text-[9px] font-mono uppercase tracking-widest rounded-lg font-medium hover:bg-[#E88D9E] transition cursor-pointer"
+                  >
+                    Publier
+                  </button>
+                </form>
+              )}
+
+              <div className="space-y-2">
+                {reviews.map((r) => (
+                  <div key={r.id} className="bg-white/80 p-2.5 rounded-xl border border-gray-100/80 space-y-0.5">
+                    <div className="flex justify-between items-center text-[9px] font-mono">
+                      <span className="font-semibold text-[#2C2224]">{r.author}</span>
+                      <span className="text-gray-300">{r.date}</span>
+                    </div>
+                    <div className="text-amber-400 text-[10px]">
+                      {"★".repeat(r.rating)}
+                      <span className="text-gray-200">{"★".repeat(5 - r.rating)}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-500 font-sans italic">{r.comment}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
-        </div>
 
-        <div className="pt-6 border-t border-gray-100 space-y-3 mt-6">
-          <button
-            type="button"
-            onClick={() => { setCartCount(cartCount + 1); onClose(); }}
-            disabled={stockAffiche <= 0}
-            className={`w-full py-4 rounded-2xl font-medium text-xs tracking-widest uppercase transition shadow-xl ${
-              stockAffiche > 0
-                ? "bg-[#E88D9E] text-white hover:bg-[#d67b8c]"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}>
-            {stockAffiche > 0 ? `Ajouter au panier — ${formatPrix()}` : "Rupture de stock"}
-          </button>
+          {/* FOOTER FIXE AVEC BOUTON FIN & CHIC */}
+          <div className="p-5 bg-white/95 backdrop-blur-xl border-t border-[#E88D9E]/15 sticky bottom-0 z-20 shadow-lg">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className="w-full py-3.5 rounded-xl bg-[#2C2224] hover:bg-[#E88D9E] text-white text-[11px] font-mono font-medium uppercase tracking-[0.2em] shadow-md transition-all duration-300 flex items-center justify-between px-5 cursor-pointer active:scale-98 group"
+            >
+              <span>{initialVarianteId ? "METTRE À JOUR" : "AJOUTER AU PANIER"}</span>
+              <span className="font-mono text-[11px] text-[#E88D9E] group-hover:text-white transition-colors">
+                {priceFormatted} {symboleDevise}
+              </span>
+            </button>
+          </div>
+
         </div>
       </div>
     </div>

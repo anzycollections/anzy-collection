@@ -1,0 +1,51 @@
+{
+  "hero": {
+    "badge": "ÉDITION 2026",
+    "title": "ANZY COLLECTION",
+    "subtitle": "Gaines colombiennes de haute qualité & prothèses en silicone conçues pour sublimer vos courbes au quotidien.",
+    "cta": "Découvrir le catalogue",
+    "images": [
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=1200&q=80"
+    ]
+  },
+  "about": {
+    "subtitle": "Savoir-Faire & Élégance",
+    "title": "L'Univers Anzy Collection",
+    "paragraph1": "Chez Anzy Collection, nous croyons que chaque femme mérite de se sentir confiante, élégante et sublimée. Nos créations allient maintien parfait et confort absolu.",
+    "paragraph2": "Chaque pièce est rigoureusement sélectionnée pour vous offrir le meilleur de la technologie textile et de l'esthétique.",
+    "image": "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&q=80"
+  },
+  "footer": {
+    "copyright": "© 2026 Anzy Collection. Tous droits réservés."
+  },
+  "social": {
+    "instagram": "https://instagram.com",
+    "tiktok": "https://tiktok.com",
+    "facebook": "https://facebook.com"
+  },
+  "categories": [
+    { "id": "gaines", "name": "Gaines & Corsets", "visible": true },
+    { "id": "protheses", "name": "Prothèses Silicone", "visible": true },
+    { "id": "beaute", "name": "Soins & Beauté", "visible": true }
+  ],
+  "products": [
+    {
+      "id": "p1",
+      "brand": "ANZY COLLECTION",
+      "name": "Prothèse en silicone 3 en 1",
+      "category": "protheses",
+      "badge": "Incontournable",
+      "description": "Prothèse médicale ultra-confortable conçue pour un rendu naturel et invisible sous vos vêtements.",
+      "price": 120000,
+      "currency": "XOF",
+      "material": "Silicone médical",
+      "sizes": ["S", "M", "L", "XL"],
+      "colors": [],
+      "images": ["https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=600&q=80"],
+      "stock": 15,
+      "visible": true,
+      "options": [],
+      "variantes": []
+    }
+  ]
+}

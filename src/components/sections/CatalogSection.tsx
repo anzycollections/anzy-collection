@@ -2,109 +2,106 @@
 
 import { useState } from "react";
 import { Product, useStore } from "@/context/StoreContext";
-import ProductCard from "../ui/ProductCard";
-import ProductDrawer from "../ui/ProductDrawer";
+import ProductCard from "@/components/ui/ProductCard";
 
 interface CatalogSectionProps {
   activeCategory: string;
-  onCategoryChange: (id: string) => void;
+  onCategoryChange: (catId: string) => void;
+  onSelectProduct: (product: Product) => void;
 }
 
-export default function CatalogSection({ activeCategory, onCategoryChange }: CatalogSectionProps) {
+export default function CatalogSection({
+  activeCategory,
+  onCategoryChange,
+  onSelectProduct,
+}: CatalogSectionProps) {
   const { content } = useStore();
   const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [cartCount, setCartCount] = useState(0);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const visibleCategories = content.categories.filter(c => c.visible);
-  const visibleProducts = content.products.filter(p => p.visible);
+  const categories = content?.categories || [];
+  const products = content?.products || [];
 
-  const filteredProducts = visibleProducts.filter(
-    (p) => activeCategory === "all" || p.category === activeCategory
-  );
-
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // 1. Filtrage typé des produits (p: Product)
+  const filteredProducts = products.filter((p: Product) => {
+    if (!p.visible) return false;
+    if (activeCategory === "all") return true;
+    return p.category === activeCategory;
+  });
+
   return (
-    <>
-      <section id="catalog" className="space-y-6">
-        <div className="flex justify-between items-end border-b border-[#E88D9E]/20 pb-4">
-          <div>
-            <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase block font-semibold">Collection</span>
-            <h2 className="text-2xl font-serif font-bold text-[#2C2224]">Explorer les catégories</h2>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button onClick={() => setViewMode("grid")} className={`p-2 rounded-lg text-sm ${viewMode === "grid" ? "bg-[#E88D9E] text-white" : "bg-white border text-gray-400"}`}>▦</button>
-            <button onClick={() => setViewMode("list")} className={`p-2 rounded-lg text-sm ${viewMode === "list" ? "bg-[#E88D9E] text-white" : "bg-white border text-gray-400"}`}>☰</button>
-          </div>
+    <section id="catalog" className="space-y-8 scroll-mt-20">
+      {/* En-tête de section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E88D9E]/15 pb-6">
+        <div>
+          <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold block">
+            NOTRE SÉLECTION
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#2C2224] mt-1">
+            Le Catalogue
+          </h2>
         </div>
 
-        {/* Catégories visibles */}
-        <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-none">
+        {/* Navigation par catégories */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2 sm:pb-0">
           <button
+            type="button"
             onClick={() => onCategoryChange("all")}
-            className={`flex-shrink-0 px-6 py-3 rounded-full text-xs font-medium tracking-wider uppercase transition-all ${
-              activeCategory === "all" ? "bg-[#E88D9E] text-white shadow-md scale-105" : "bg-white text-[#2C2224]/80 border border-[#E88D9E]/20"
-            }`}>
-            Toutes les pièces
+            className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+              activeCategory === "all"
+                ? "bg-[#2C2224] text-white shadow-md"
+                : "bg-white text-gray-600 border border-gray-200 hover:border-[#E88D9E]"
+            }`}
+          >
+            Tous les articles
           </button>
-          {visibleCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => onCategoryChange(cat.id)}
-              className={`flex-shrink-0 px-6 py-3 rounded-full text-xs font-medium tracking-wider uppercase transition-all ${
-                activeCategory === cat.id ? "bg-[#E88D9E] text-white shadow-md scale-105" : "bg-white text-[#2C2224]/80 border border-[#E88D9E]/20"
-              }`}>
-              {cat.name}
-            </button>
+
+          {/* 2. Filtres typés des catégories (c: any, cat: any) */}
+          {categories
+            .filter((c: any) => c.visible)
+            .map((cat: any) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => onCategoryChange(cat.id)}
+                className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                  activeCategory === cat.id
+                    ? "bg-[#2C2224] text-white shadow-md"
+                    : "bg-white text-gray-600 border border-gray-200 hover:border-[#E88D9E]"
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+        </div>
+      </div>
+
+      {/* Grille des cartes produits */}
+      {filteredProducts.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-200 space-y-3">
+          <span className="text-4xl block">✨</span>
+          <p className="text-sm font-medium text-[#2C2224]">
+            Aucun article disponible dans cette catégorie pour le moment.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* 3. Mappage typé des cartes produits (product: Product) */}
+          {filteredProducts.map((product: Product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onSelect={onSelectProduct}
+              favorites={favorites}
+              onToggleFavorite={handleToggleFavorite}
+            />
           ))}
         </div>
-      </section>
-
-      <section className="space-y-8">
-        {filteredProducts.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <span className="text-4xl block mb-4">📦</span>
-            <p className="text-sm font-light">Aucun produit dans cette catégorie.</p>
-          </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} onSelect={setSelectedProduct} favorites={favorites} onToggleFavorite={toggleFavorite} />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredProducts.map((product) => (
-              <div key={product.id} onClick={() => setSelectedProduct(product)}
-                className="bg-white rounded-2xl p-4 border border-[#E88D9E]/15 hover:border-[#E88D9E]/50 hover:shadow-md transition cursor-pointer flex items-center space-x-4">
-                <div className="w-20 h-20 rounded-xl bg-[#FAF7F5] flex-shrink-0 flex items-center justify-center overflow-hidden">
-                  {product.images?.[0] ? <img src={product.images[0]} className="max-h-full max-w-full object-contain" /> : <span className="text-2xl">📷</span>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase block">{product.brand}</span>
-                  <h3 className="text-sm font-serif font-semibold text-[#2C2224] truncate">{product.name}</h3>
-                  <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{product.description}</p>
-                  <div className="flex items-center space-x-3 mt-2">
-                    <span className="text-sm font-bold">{product.price.toLocaleString()} F CFA</span>
-                    <span className={`text-[10px] font-medium ${product.stock > 7 ? "text-green-500" : product.stock > 0 ? "text-orange-400" : "text-red-400"}`}>
-                      {product.stock > 7 ? "🟢 Disponible" : product.stock > 0 ? `🟡 ${product.stock} restants` : "🔴 Rupture"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {selectedProduct && (
-        <ProductDrawer product={selectedProduct} onClose={() => setSelectedProduct(null)} cartCount={cartCount} setCartCount={setCartCount} />
       )}
-    </>
+    </section>
   );
 }
