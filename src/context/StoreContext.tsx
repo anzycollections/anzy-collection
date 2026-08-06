@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { DEFAULT_SHIPPING_PRICES } from "@/data/shippingZones";
 
 export interface Category {
   id: string;
@@ -27,7 +28,7 @@ export interface Product {
   brand?: string;
   name: string;
   categoryId?: string | null;
-  category?: string | null; // Champ utilisé par le formulaire admin & l'affichage boutique
+  category?: string | null;
   badge?: string | null;
   description?: string | null;
   price: number;
@@ -71,14 +72,60 @@ export interface StoreContent {
     tiktok?: string;
     facebook?: string;
   };
+  shippingPrices?: Record<string, number>;
 }
 
 export type Langue = "FR" | "EN" | "ES" | "PT";
 export type Devise = "XOF" | "EUR" | "USD";
 
 const symbolesDevises: Record<string, string> = { EUR: "€", XOF: "F CFA", USD: "$" };
-// Taux approximatifs (base XOF), à ajuster si besoin
 const tauxConversion: Record<string, number> = { XOF: 1, EUR: 0.0015, USD: 0.0016 };
+
+const DEFAULT_FALLBACK_PRODUCTS: Product[] = [
+  {
+    id: "prod-1",
+    brand: "ANZY COLLECTION",
+    name: "Gaine Amincissante en Silicone Haute Performance",
+    categoryId: "gaines",
+    category: "gaines",
+    badge: "Bestseller",
+    description: "Gaine sculptante invisible sous les vêtements, conçue en silicone respirant pour un maintien optimal et un effet ventre plat instantané.",
+    price: 160000,
+    currency: "XOF",
+    material: "Silicone & Coton",
+    sizes: ["S", "M", "L", "XL", "2XL"],
+    images: ["https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop"],
+    image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop",
+    stock: 15,
+    visible: true,
+    options: [{ name: "Taille", values: ["S", "M", "L", "XL", "2XL"] }],
+    variantes: [
+      { id: "v1", combo: { Taille: "S" }, price: 160000, stock: 5, image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop", active: true },
+      { id: "v2", combo: { Taille: "M" }, price: 160000, stock: 5, image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?q=80&w=800&auto=format&fit=crop", active: true },
+    ]
+  },
+  {
+    id: "prod-2",
+    brand: "ANZY COLLECTION",
+    name: "Body Sculptant Invisible",
+    categoryId: "gaines",
+    category: "gaines",
+    badge: "Nouveau",
+    description: "Un maintien complet du buste aux cuisses pour une silhouette parfaitement dessinée en toute occasion.",
+    price: 45000,
+    currency: "XOF",
+    material: "Élasthanne premium",
+    sizes: ["S", "M", "L", "XL"],
+    images: ["https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop"],
+    image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop",
+    stock: 20,
+    visible: true,
+    options: [{ name: "Taille", values: ["S", "M", "L", "XL"] }],
+    variantes: [
+      { id: "v4", combo: { Taille: "S" }, price: 45000, stock: 10, image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop", active: true },
+    ]
+  }
+];
 
 interface StoreContextType {
   products: Product[];
@@ -105,45 +152,40 @@ const LANGUE_KEY = "anzy-langue";
 const DEVISE_KEY = "anzy-devise";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>(DEFAULT_FALLBACK_PRODUCTS);
+  const [categories, setCategories] = useState<Category[]>([
+    { id: "gaines", name: "Gaines", visible: true },
+    { id: "huiles", name: "Huiles Essentielles", visible: true }
+  ]);
   const [siteConfig, setSiteConfig] = useState<StoreContent>({});
   const [loading, setLoading] = useState(true);
 
   const [langue, setLangueState] = useState<Langue>("FR");
   const [devise, setDeviseState] = useState<Devise>("XOF");
 
-  // Préférences langue/devise : persistées localement (choix propre au visiteur, pas une donnée boutique)
   useEffect(() => {
     try {
       const savedLangue = localStorage.getItem(LANGUE_KEY) as Langue | null;
       const savedDevise = localStorage.getItem(DEVISE_KEY) as Devise | null;
       if (savedLangue === "FR" || savedLangue === "EN") setLangueState(savedLangue);
       if (savedDevise === "XOF" || savedDevise === "EUR" || savedDevise === "USD") setDeviseState(savedDevise);
-    } catch {
-      // localStorage indisponible (SSR ou navigation privée) : on garde les valeurs par défaut
-    }
+    } catch {}
   }, []);
 
   const setLangue = useCallback((l: Langue) => {
     setLangueState(l);
-    try {
-      localStorage.setItem(LANGUE_KEY, l);
-    } catch {}
+    try { localStorage.setItem(LANGUE_KEY, l); } catch {}
   }, []);
 
   const setDevise = useCallback((d: Devise) => {
     setDeviseState(d);
-    try {
-      localStorage.setItem(DEVISE_KEY, d);
-    } catch {}
+    try { localStorage.setItem(DEVISE_KEY, d); } catch {}
   }, []);
 
   const convertirPrix = useCallback(
     (prixXOF: number) => {
       const taux = tauxConversion[devise] ?? 1;
       const converted = prixXOF * taux;
-      // XOF : pas de décimales. EUR/USD : arrondi à 2 décimales.
       return devise === "XOF" ? Math.round(converted) : Math.round(converted * 100) / 100;
     },
     [devise]
@@ -161,27 +203,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (resProd.ok) {
         const dataProd = await resProd.json();
-        const formatted: Product[] = dataProd.map((p: any) => ({
-          ...p,
-          category: p.category ?? p.categoryId ?? "",
-          price: Number(p.price),
-          image: p.images?.[0] || p.image || "",
-        }));
-        setProducts(formatted);
+        if (Array.isArray(dataProd) && dataProd.length > 0) {
+          const formatted: Product[] = dataProd.map((p: any) => ({
+            ...p,
+            category: p.category ?? p.categoryId ?? "",
+            price: Number(p.price),
+            image: p.images?.[0] || p.image || "",
+          }));
+          setProducts(formatted);
+        }
       }
 
       if (resContent.ok) {
         const dataContent = await resContent.json();
-        setCategories(Array.isArray(dataContent.categories) ? dataContent.categories : []);
+        if (Array.isArray(dataContent.categories) && dataContent.categories.length > 0) {
+          setCategories(dataContent.categories);
+        }
         setSiteConfig({
           hero: dataContent.hero || {},
           about: dataContent.about || {},
           footer: dataContent.footer || {},
           social: dataContent.social || {},
+          shippingPrices: dataContent.shippingPrices || DEFAULT_SHIPPING_PRICES,
         });
       }
     } catch (e) {
-      console.error("Erreur synchronisation Neon DB:", e);
+      console.error("Erreur synchronisation DB, utilisation du fallback:", e);
     } finally {
       setLoading(false);
     }
@@ -227,8 +274,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     await refreshAll();
   };
 
-  // saveContent gère hero / about / footer / social / categories.
-  // Les produits ne transitent plus par ici : voir addProduct / updateProduct / deleteProduct.
   const saveContent = async (newContent: StoreContent) => {
     const payload: Record<string, unknown> = {};
     if (newContent.hero) payload.hero = newContent.hero;
@@ -236,6 +281,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (newContent.footer) payload.footer = newContent.footer;
     if (newContent.social) payload.social = newContent.social;
     if (newContent.categories) payload.categories = newContent.categories;
+    if (newContent.shippingPrices) payload.shippingPrices = newContent.shippingPrices;
 
     const res = await fetch("/api/content", {
       method: "POST",
@@ -246,7 +292,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     await refreshAll();
   };
 
-  // Objet "content" unifié exposé aux composants : hero/about/footer/social + categories + products
   const content: StoreContent = {
     ...siteConfig,
     categories,

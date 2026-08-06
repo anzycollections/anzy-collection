@@ -1,73 +1,40 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Product, useStore } from "@/context/StoreContext";
 import ProductForm from "./components/ProductForm";
 import ProductTable from "./components/ProductTable";
 import CategoryManager from "./components/CategoryManager";
-import { getAllReviewsForAdmin, toggleApproveReview, deleteReview } from "@/app/actions/reviews";
+import ShippingTab from "./components/ShippingTab";
+import HeroTab from "./components/HeroTab";
+import AboutTab from "./components/AboutTab";
+import FooterTab from "./components/FooterTab";
+import ReviewsTab from "./components/ReviewsTab";
 
-type Tab = "products" | "categories" | "hero" | "about" | "footer" | "reviews";
+type Tab = "products" | "categories" | "hero" | "about" | "footer" | "reviews" | "shipping";
 
 export default function AdminPage() {
   const { content, products, saveContent, addProduct, updateProduct, deleteProduct } = useStore();
+  
+  // État pour savoir si les données ont bien été chargées
+  const [isInitialized, setIsInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("products");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // État pour la gestion des avis clients
-  const [adminReviews, setAdminReviews] = useState<any[]>([]);
 
-  const heroFileRef = useRef<HTMLInputElement>(null);
-  const aboutFileRef = useRef<HTMLInputElement>(null);
-
-  // Les produits viennent directement de la base de données (table "products")
-  const productList: Product[] = products || [];
-
-  const [heroForm, setHeroForm] = useState(content?.hero || { badge: "", title: "", subtitle: "", buttonText: "", images: [] });
-  const [aboutForm, setAboutForm] = useState(
-    content?.about || { subtitle: "", title: "", founderName: "", founderRole: "", quote: "", description: "", image: "" }
-  );
-  const [footerForm, setFooterForm] = useState(content?.footer || { copyright: "" });
-  const [socialForm, setSocialForm] = useState(content?.social || { instagram: "", tiktok: "", facebook: "" });
-
-  const [heroSaved, setHeroSaved] = useState(false);
-  const [aboutSaved, setAboutSaved] = useState(false);
-  const [footerSaved, setFooterSaved] = useState(false);
-
-  useEffect(() => { if (content?.hero) setHeroForm(content.hero); }, [content?.hero]);
-  useEffect(() => { if (content?.about) setAboutForm(content.about); }, [content?.about]);
-  useEffect(() => { if (content?.footer) setFooterForm(content.footer); }, [content?.footer]);
-  useEffect(() => { if (content?.social) setSocialForm(content.social); }, [content?.social]);
-
-  // Charger les avis lorsque l'onglet "reviews" est actif
+  // Protection : On attend que le contenu soit chargé au moins une fois
   useEffect(() => {
-    if (activeTab === "reviews") {
-      getAllReviewsForAdmin().then(setAdminReviews);
+    if (content && Object.keys(content).length > 0) {
+      setIsInitialized(true);
     }
-  }, [activeTab]);
+  }, [content]);
 
-  const handleToggleReview = async (id: string, currentStatus: boolean) => {
-    await toggleApproveReview(id, currentStatus);
-    const updated = await getAllReviewsForAdmin();
-    setAdminReviews(updated);
-  };
-
-  const handleDeleteReviewAdmin = async (id: string) => {
-    if (confirm("Voulez-vous vraiment supprimer cet avis ?")) {
-      await deleteReview(id);
-      const updated = await getAllReviewsForAdmin();
-      setAdminReviews(updated);
-    }
-  };
-
-  // Filtrage sécurisé des produits
+  const productList: Product[] = products || [];
   const filtered = productList.filter((p: Product) =>
     p?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Sauvegarde d'un produit dans la vraie base de données (table "products")
   const handleSaveProduct = async (productData: Product) => {
     try {
       if (editingProduct) {
@@ -83,7 +50,6 @@ export default function AdminPage() {
     }
   };
 
-  // Suppression d'un produit dans la vraie base de données
   const handleDeleteProduct = async (productId: string) => {
     try {
       await deleteProduct(productId);
@@ -93,72 +59,20 @@ export default function AdminPage() {
     }
   };
 
-  const saveHero = () => {
-    saveContent({ ...content, hero: heroForm });
-    setHeroSaved(true);
-    setTimeout(() => setHeroSaved(false), 2000);
-  };
-
-  const saveAbout = () => {
-    saveContent({ ...content, about: aboutForm });
-    setAboutSaved(true);
-    setTimeout(() => setAboutSaved(false), 2000);
-  };
-
-  const saveFooter = () => {
-    saveContent({ ...content, footer: footerForm, social: socialForm });
-    setFooterSaved(true);
-    setTimeout(() => setFooterSaved(false), 2000);
-  };
-
-  const handleHeroImages = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files; if (!files) return;
-    const current = heroForm.images || [];
-    if (current.length + files.length > 5) return;
-    let loaded = 0; const newImgs: string[] = [];
-    Array.from(files).forEach((f) => {
-      const r = new FileReader();
-      r.onloadend = () => {
-        newImgs.push(r.result as string);
-        loaded++;
-        if (loaded === files.length) setHeroForm({ ...heroForm, images: [...current, ...newImgs] });
-      };
-      r.readAsDataURL(f);
-    });
-  };
-
-  const handleAboutImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const r = new FileReader();
-    r.onloadend = () => setAboutForm({ ...aboutForm, image: r.result as string });
-    r.readAsDataURL(file);
-  };
-
   const tabs = [
     { id: "products", label: "PRODUITS", code: "01" },
     { id: "categories", label: "CATÉGORIES", code: "02" },
-    { id: "hero", label: "SECTION HERO", code: "03" },
-    { id: "about", label: "À PROPOS", code: "04" },
-    { id: "footer", label: "PIED DE PAGE", code: "05" },
-    { id: "reviews", label: "AVIS CLIENTS", code: "06" },
+    { id: "shipping", label: "LIVRAISON", code: "03" },
+    { id: "hero", label: "SECTION HERO", code: "04" },
+    { id: "about", label: "À PROPOS", code: "05" },
+    { id: "footer", label: "PIED DE PAGE", code: "06" },
+    { id: "reviews", label: "AVIS CLIENTS", code: "07" },
   ];
-
-  const SaveButton = ({ saved, onClick, label }: { saved: boolean; onClick: () => void; label: string }) => (
-    <button
-      onClick={onClick}
-      className={`w-full py-4 rounded-2xl text-[11px] font-mono font-bold uppercase tracking-widest transition-all duration-300 shadow-md ${
-        saved ? "bg-green-600 text-white scale-102" : "bg-[#2C2224] text-white hover:bg-black"
-      }`}
-    >
-      {saved ? "✓ MODIFICATIONS ENREGISTRÉES" : `ENREGISTRER ${label}`}
-    </button>
-  );
 
   return (
     <div className="min-h-screen bg-[#FAF7F5] p-4 sm:p-6 lg:p-10 text-[#2C2224] pb-28">
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* EN-TÊTE ADMIN */}
         <div className="flex justify-between items-end border-b border-[#E88D9E]/20 pb-5">
           <div>
             <span className="text-[9px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase font-bold block mb-1">
@@ -178,7 +92,6 @@ export default function AdminPage() {
           </a>
         </div>
 
-        {/* ONGLETS */}
         <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-200/60">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -199,10 +112,8 @@ export default function AdminPage() {
           })}
         </div>
 
-        {/* ONGLET PRODUITS */}
         {activeTab === "products" && (
           <div className="space-y-6">
-            
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div className="relative flex-1">
                 <input
@@ -213,7 +124,6 @@ export default function AdminPage() {
                   className="w-full px-5 py-3 rounded-2xl border border-gray-200 text-xs bg-white focus:border-[#E88D9E] focus:outline-none shadow-sm transition"
                 />
               </div>
-
               <button
                 onClick={() => { setEditingProduct(null); setShowForm(!showForm); }}
                 className="bg-[#E88D9E] text-white px-6 py-3 rounded-2xl text-[10px] font-mono font-bold uppercase tracking-widest shadow-md hover:bg-[#d67b8c] active:scale-98 transition text-center shrink-0 cursor-pointer"
@@ -221,226 +131,25 @@ export default function AdminPage() {
                 {showForm ? "Fermer le formulaire" : "+ Nouvelle création"}
               </button>
             </div>
-
-            {/* Formulaire de création / édition */}
             {showForm && (
-              <ProductForm
-                editingProduct={editingProduct}
-                onSave={handleSaveProduct}
-              />
+              <ProductForm editingProduct={editingProduct} onSave={handleSaveProduct} />
             )}
-
-            {/* Tableau récapitulatif */}
-            <ProductTable
-              products={filtered}
-              onEdit={(p: Product) => { setEditingProduct(p); setShowForm(true); }}
-              onDelete={handleDeleteProduct}
-            />
+            <ProductTable products={filtered} onEdit={(p: Product) => { setEditingProduct(p); setShowForm(true); }} onDelete={handleDeleteProduct} />
           </div>
         )}
 
-        {/* ONGLET CATÉGORIES */}
-        {activeTab === "categories" && <CategoryManager />}
-
-        {/* ONGLET AVIS CLIENTS (MODÉRATION) */}
-        {activeTab === "reviews" && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-6">
-            <div className="border-b border-gray-100 pb-3 flex justify-between items-center">
-              <div>
-                <span className="text-[9px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold">SECTION 06</span>
-                <h2 className="text-xl font-serif font-bold text-[#2C2224]">Modération des Avis Clients</h2>
-              </div>
-              <span className="text-xs font-mono bg-[#FAF7F5] px-3 py-1 rounded-xl border border-gray-200">
-                Total : {adminReviews.length}
-              </span>
-            </div>
-
-            {adminReviews.length === 0 ? (
-              <p className="text-xs font-mono text-gray-400 italic py-6 text-center">Aucun avis client pour le moment.</p>
-            ) : (
-              <div className="space-y-3">
-                {adminReviews.map((r) => (
-                  <div key={r.id} className="p-4 rounded-2xl border border-gray-100 bg-[#FAF7F5]/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-[#2C2224]">{r.author}</span>
-                        <span className="text-amber-400 text-xs">{"★".repeat(r.rating)}<span className="text-gray-250">{"★".repeat(5 - r.rating)}</span></span>
-                        <span className={`text-[9px] font-mono px-2 py-0.5 rounded-full uppercase font-bold ${r.isApproved ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                          {r.isApproved ? "Publié" : "En attente"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 font-sans italic">"{r.comment}"</p>
-                      <span className="text-[9px] font-mono text-gray-400 block">
-                        Produit ID : {r.productId} • Envoyé le {new Date(r.createdAt).toLocaleDateString("fr-FR")}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => handleToggleReview(r.id, r.isApproved)}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold uppercase transition cursor-pointer ${
-                          r.isApproved 
-                            ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100" 
-                            : "bg-green-600 text-white hover:bg-green-700 shadow-sm"
-                        }`}
-                      >
-                        {r.isApproved ? "Masquer" : "Valider & Publier"}
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteReviewAdmin(r.id)}
-                        className="px-3 py-1.5 rounded-xl text-[10px] font-mono font-bold uppercase bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition cursor-pointer"
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ONGLET HERO */}
-        {activeTab === "hero" && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-5">
-            <div className="border-b border-gray-100 pb-3">
-              <span className="text-[9px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold">SECTION 03</span>
-              <h2 className="text-xl font-serif font-bold text-[#2C2224]">Bannière d'Accueil (Hero)</h2>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Badge d'accroche</label>
-              <input type="text" value={heroForm.badge} onChange={(e) => setHeroForm({ ...heroForm, badge: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Titre principal</label>
-              <input type="text" value={heroForm.title} onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Sous-titre descriptif</label>
-              <textarea value={heroForm.subtitle} onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs h-20 focus:border-[#E88D9E] focus:outline-none resize-none" />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Texte du bouton principal (CTA)</label>
-              <input type="text" value={heroForm.buttonText} onChange={(e) => setHeroForm({ ...heroForm, buttonText: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-2">Visuels carrousel (max 5)</label>
-              <input type="file" accept="image/*" ref={heroFileRef} onChange={handleHeroImages} className="hidden" multiple />
-
-              <div className="flex flex-wrap gap-3">
-                {(heroForm.images || []).map((img: string, i: number) => (
-                  <div key={i} className="relative w-20 h-20 rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
-                    <img src={img} alt="Hero" className="w-full h-full object-cover" />
-                    <button 
-                      type="button"
-                      onClick={() => setHeroForm({ ...heroForm, images: (heroForm.images || []).filter((_: string, j: number) => j !== i) })} 
-                      className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-                {(heroForm.images || []).length < 5 && (
-                  <div onClick={() => heroFileRef.current?.click()} className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#E88D9E] bg-[#FAF7F5] transition">
-                    <span className="text-xl text-gray-400">+</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <SaveButton saved={heroSaved} onClick={saveHero} label="SECTION HERO" />
-          </div>
-        )}
-
-        {/* ONGLET À PROPOS */}
-        {activeTab === "about" && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-5">
-            <div className="border-b border-gray-100 pb-3">
-              <span className="text-[9px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold">SECTION 04</span>
-              <h2 className="text-xl font-serif font-bold text-[#2C2224]">Présentation de la Maison (À Propos)</h2>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Sous-titre d'en-tête</label>
-              <input type="text" value={aboutForm.subtitle} onChange={(e) => setAboutForm({ ...aboutForm, subtitle: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Titre de section</label>
-              <input type="text" value={aboutForm.title} onChange={(e) => setAboutForm({ ...aboutForm, title: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Nom de la fondatrice</label>
-                <input type="text" value={aboutForm.founderName} onChange={(e) => setAboutForm({ ...aboutForm, founderName: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
-              </div>
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Rôle de la fondatrice</label>
-                <input type="text" value={aboutForm.founderRole} onChange={(e) => setAboutForm({ ...aboutForm, founderRole: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Citation</label>
-              <textarea value={aboutForm.quote} onChange={(e) => setAboutForm({ ...aboutForm, quote: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs h-16 focus:border-[#E88D9E] focus:outline-none resize-none" />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Description</label>
-              <textarea value={aboutForm.description} onChange={(e) => setAboutForm({ ...aboutForm, description: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs h-20 focus:border-[#E88D9E] focus:outline-none resize-none" />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-2">Visuel officiel</label>
-              <input type="file" accept="image/*" ref={aboutFileRef} onChange={handleAboutImage} className="hidden" />
-              <div onClick={() => aboutFileRef.current?.click()} className="w-full h-36 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#E88D9E] bg-[#FAF7F5] transition">
-                {aboutForm.image ? <img src={aboutForm.image} alt="About" className="max-h-full rounded-xl" /> : <span className="text-xs font-mono uppercase text-gray-400">Importer l'image</span>}
-              </div>
-            </div>
-
-            <SaveButton saved={aboutSaved} onClick={saveAbout} label="SECTION À PROPOS" />
-          </div>
-        )}
-
-        {/* ONGLET FOOTER */}
-        {activeTab === "footer" && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-4">
-              <div className="border-b border-gray-100 pb-2">
-                <span className="text-[9px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold">SECTION 05</span>
-                <h2 className="text-xl font-serif font-bold text-[#2C2224]">Pied de Page (Footer)</h2>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">© Mentions Légales / Copyright</label>
-                <input type="text" value={footerForm.copyright} onChange={(e) => setFooterForm({ ...footerForm, copyright: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-4">
-              <h2 className="text-lg font-serif font-bold border-b border-gray-100 pb-2">Réseaux Sociaux Officiels</h2>
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Instagram URL</label>
-                <input type="url" value={socialForm.instagram} onChange={(e) => setSocialForm({ ...socialForm, instagram: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" placeholder="https://instagram.com/..." />
-              </div>
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">TikTok URL</label>
-                <input type="url" value={socialForm.tiktok} onChange={(e) => setSocialForm({ ...socialForm, tiktok: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" placeholder="https://tiktok.com/..." />
-              </div>
-              <div>
-                <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Facebook URL</label>
-                <input type="url" value={socialForm.facebook} onChange={(e) => setSocialForm({ ...socialForm, facebook: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" placeholder="https://facebook.com/..." />
-              </div>
-              <SaveButton saved={footerSaved} onClick={saveFooter} label="CONFIGURATION DU FOOTER" />
-            </div>
-          </div>
+        {/* On n'affiche les onglets que si isInitialized est true pour éviter les formulaires vides */}
+        {isInitialized ? (
+          <>
+            {activeTab === "categories" && <CategoryManager />}
+            {activeTab === "shipping" && <ShippingTab content={content} saveContent={saveContent} />}
+            {activeTab === "hero" && <HeroTab content={content} saveContent={saveContent} />}
+            {activeTab === "about" && <AboutTab content={content} saveContent={saveContent} />}
+            {activeTab === "footer" && <FooterTab content={content} saveContent={saveContent} />}
+            {activeTab === "reviews" && <ReviewsTab />}
+          </>
+        ) : (
+          <div className="py-20 text-center font-mono text-xs text-gray-400 uppercase tracking-widest">Chargement des données...</div>
         )}
 
       </div>
