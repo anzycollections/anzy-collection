@@ -39,10 +39,10 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
       setForm({
         brand: editingProduct.brand || "ANZY COLLECTION",
         name: editingProduct.name || "",
-        category: editingProduct.category || "gaines",
+        category: editingProduct.category || editingProduct.categoryId || "gaines",
         badge: editingProduct.badge || "Nouveauté",
         description: editingProduct.description || "",
-        price: editingProduct.price || 0,
+        price: Number(editingProduct.price) || 0, // 👈 Transtypage en number pour TypeScript
         currency: editingProduct.currency || "XOF",
         material: editingProduct.material || "",
         sizes: (editingProduct.sizes || []).join(", "),
@@ -128,7 +128,12 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
     setForm((prev) => ({ ...prev, options: opts }));
   };
 
-  const setOptionDefaultValue = (optName: string, val: string, field: "price" | "stock", amount: number) => {
+  const setOptionDefaultValue = (
+    optName: string,
+    val: string,
+    field: "price" | "stock",
+    amount: number
+  ) => {
     setOptionDefaults((prev) => ({
       ...prev,
       [`${optName}-${val}-${field}`]: amount,
@@ -195,6 +200,7 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
       brand: form.brand,
       name: form.name,
       category: form.category,
+      categoryId: form.category,
       badge: form.badge,
       description: form.description,
       price: Number(form.price),
