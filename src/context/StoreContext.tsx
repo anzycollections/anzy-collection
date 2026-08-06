@@ -8,6 +8,20 @@ export interface Category {
   visible: boolean;
 }
 
+export interface VarianteOption {
+  name: string;
+  values: string[];
+}
+
+export interface VarianteCombi {
+  id: string;
+  combo: Record<string, string>;
+  price: number;
+  stock: number;
+  image: string;
+  active: boolean;
+}
+
 export interface Product {
   id: string;
   brand?: string;
@@ -24,15 +38,8 @@ export interface Product {
   image?: string;
   stock?: number;
   visible?: boolean;
-  options?: { name: string; values: string[] }[];
-  variantes?: {
-    id: string;
-    combo: Record<string, string>;
-    price: number;
-    stock: number;
-    image: string;
-    active: boolean;
-  }[];
+  options?: VarianteOption[];
+  variantes?: VarianteCombi[];
 }
 
 export interface StoreContent {
