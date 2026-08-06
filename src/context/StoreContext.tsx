@@ -30,6 +30,13 @@ export interface Product {
 }
 
 export interface StoreContent {
+  hero?: {
+    badge?: string;
+    title?: string;
+    subtitle?: string;
+    buttonText?: string;
+    images?: string[];
+  };
   about?: {
     subtitle?: string;
     title?: string;
@@ -83,7 +90,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (resContent.ok) {
         const dataContent = await resContent.json();
-        if (dataContent.about) {
+        if (dataContent.about || dataContent.hero) {
           setContent(dataContent);
         }
       }
