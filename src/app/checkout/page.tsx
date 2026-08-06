@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { useStore } from "@/context/StoreContext";
-import Link from "next/link";
+import { useCartUI } from "@/context/CartUIContext";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPage() {
   const { items, subtotal, total, country, selectedShipping, isLoaded } = useCart();
   const { convertirPrix, symboleDevise } = useStore();
+  const { openCart, closeCart } = useCartUI();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -21,9 +22,15 @@ export default function CheckoutPage() {
   const [receiptUrl, setReceiptUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Une fois la page checkout montée, on referme le panier (qui était resté
+  // ouvert pendant la transition pour éviter le flash de la page d'accueil).
+  useEffect(() => {
+    closeCart();
+  }, []);
+
   // Attendre que le panier soit relu depuis localStorage avant de décider quoi que ce soit
   if (!isLoaded) {
-    return null; // ou un petit spinner si tu veux un retour visuel pendant ce court instant
+    return null;
   }
 
   // Redirection seulement une fois qu'on est sûr que le panier est vraiment vide
@@ -32,8 +39,16 @@ export default function CheckoutPage() {
     return null;
   }
 
+  const handleBackToCart = () => {
+    openCart();
+    router.push("/");
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Cette fonction sera connectée à Vercel Blob à l'étape suivante
     setUploading(true);
     setTimeout(() => {
       setReceiptUrl("mock_url_for_now");
@@ -44,7 +59,6 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    // Logique d'envoi à la base de données (étape suivante)
     setTimeout(() => {
       alert("Commande validée ! Nous allons créer l'API pour enregistrer ça.");
       setSubmitting(false);
@@ -53,42 +67,42 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F5] font-sans text-[#2C2224]">
-      {/* HEADER MINIMALISTE */}
       <header className="bg-white border-b border-[#E88D9E]/15 py-5 px-6 md:px-12 flex items-center justify-between sticky top-0 z-50">
-        <Link href="/" className="text-xs font-mono font-bold text-gray-500 hover:text-[#E88D9E] transition-colors flex items-center gap-2 uppercase tracking-wider">
-          <span>←</span> Retour à la boutique
-        </Link>
+        <button
+          type="button"
+          onClick={handleBackToCart}
+          className="text-xs font-mono font-bold text-gray-500 hover:text-[#E88D9E] transition-colors flex items-center gap-2 uppercase tracking-wider cursor-pointer"
+        >
+          <span>←</span> Retour au panier
+        </button>
         <div className="absolute left-1/2 -translate-x-1/2 text-center hidden sm:block">
           <h1 className="text-lg font-serif font-bold tracking-[0.2em] uppercase">ANZY COLLECTION</h1>
           <span className="text-[7px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase">Paiement Sécurisé</span>
         </div>
-        <div className="w-20" /> {/* Spacer pour centrer le logo */}
+        <div className="w-20" />
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
 
-          {/* COLONNE GAUCHE : FORMULAIRES */}
           <div className="lg:col-span-7 space-y-10">
 
-            {/* Étape 1 : Coordonnées */}
             <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="font-serif font-bold text-lg mb-6 border-b border-gray-100 pb-4">1. Vos Coordonnées</h2>
               <div className="space-y-4">
-                <input type="text" placeholder="Nom et Prénom" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+                <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Nom et Prénom" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="email" placeholder="Adresse e-mail" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
-                  <input type="tel" placeholder="Téléphone / WhatsApp" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Adresse e-mail" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Téléphone / WhatsApp" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
                 </div>
-                <input type="text" placeholder="Adresse de livraison complète" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+                <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Adresse de livraison complète" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" placeholder="Ville" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+                  <input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="Ville" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
                   <input type="text" value={country} disabled className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-gray-50 text-gray-500 cursor-not-allowed" />
                 </div>
               </div>
             </section>
 
-            {/* Étape 2 : Paiement & Preuve */}
             <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="font-serif font-bold text-lg mb-6 border-b border-gray-100 pb-4">2. Paiement & Reçu</h2>
 
@@ -124,7 +138,7 @@ export default function CheckoutPage() {
                   <p className="mt-2 text-xs font-mono">Numéro / Info : (+229) 00 00 00 00</p>
                 </div>
 
-                <input type="text" placeholder="Référence de transaction (ID SMS, MTCN...)" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm font-mono focus:border-[#E88D9E] outline-none" />
+                <input type="text" name="reference" value={reference} onChange={e => setReference(e.target.value)} placeholder="Référence de transaction (ID SMS, MTCN...)" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm font-mono focus:border-[#E88D9E] outline-none" />
 
                 <div className="pt-2 border-t border-gray-100">
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-3">Photo du reçu / Capture d'écran</label>
@@ -135,7 +149,6 @@ export default function CheckoutPage() {
             </section>
           </div>
 
-          {/* COLONNE DROITE : RÉSUMÉ DE LA COMMANDE */}
           <div className="lg:col-span-5">
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg shadow-[#E88D9E]/5 border border-[#E88D9E]/20 sticky top-24">
               <h2 className="font-serif font-bold text-lg mb-6">Résumé de la commande</h2>

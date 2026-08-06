@@ -2,11 +2,13 @@
 
 import { useCart } from "@/context/CartContext";
 import { useStore, Langue, Devise } from "@/context/StoreContext";
+import { useCartUI } from "@/context/CartUIContext";
 import { useState, useRef, useEffect } from "react";
 
-export default function Header({ onOpenCart }: { onOpenCart: () => void }) {
+export default function Header() {
   const { items } = useCart();
   const { langue, setLangue, devise, setDevise } = useStore();
+  const { openCart } = useCartUI();
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const [langOpen, setLangOpen] = useState(false);
@@ -46,7 +48,7 @@ export default function Header({ onOpenCart }: { onOpenCart: () => void }) {
 
         <div className="ml-auto flex items-center">
           <button
-            onClick={onOpenCart}
+            onClick={openCart}
             className="relative p-2.5 rounded-2xl bg-[#2C2224] text-white hover:bg-[#E88D9E] transition-all duration-300 shadow-md cursor-pointer"
             aria-label="Panier"
           >
@@ -65,7 +67,6 @@ export default function Header({ onOpenCart }: { onOpenCart: () => void }) {
       <div className="w-full border-t border-[#E88D9E]/10" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-2.5 flex items-center justify-between">
-        {/* Sélecteur de Langue (Gauche) */}
         <div className="relative" ref={langRef}>
           <button
             onClick={() => setLangOpen(!langOpen)}
@@ -94,7 +95,6 @@ export default function Header({ onOpenCart }: { onOpenCart: () => void }) {
           )}
         </div>
 
-        {/* Sélecteur de Devise (Droite) */}
         <div className="relative" ref={deviseRef}>
           <button
             onClick={() => setDeviseOpen(!deviseOpen)}
