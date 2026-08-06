@@ -253,7 +253,7 @@ export default function AdminPage() {
                     <img src={img} alt="Hero" className="w-full h-full object-cover" />
                     <button 
                       type="button"
-                      onClick={() => setHeroForm({ ...heroForm, images: heroForm.images.filter((_: string, j: number) => j !== i) })} 
+                      onClick={() => setHeroForm({ ...heroForm, images: (heroForm.images || []).filter((_: string, j: number) => j !== i) })} 
                       className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center cursor-pointer"
                     >
                       ✕
