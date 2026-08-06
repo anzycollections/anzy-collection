@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Product, useStore } from "@/context/StoreContext";
 import { useCart } from "@/context/CartContext";
 import ProductDescription from "./ProductDescription";
 import VariantSelector from "./VariantSelector";
+import { getApprovedReviews, createReview } from "@/app/actions/reviews";
 
 interface ProductDrawerProps {
   product: Product;
@@ -17,7 +18,7 @@ interface Review {
   id: string;
   author: string;
   rating: number;
-  date: string;
+  createdAt: Date | string;
   comment: string;
 }
 
@@ -39,27 +40,31 @@ export default function ProductDrawer({
   );
   const [quantity, setQuantity] = useState(initialQuantity);
 
-  const [reviews, setReviews] = useState<Review[]>([
-    {
-      id: "1",
-      author: "Aïcha K.",
-      rating: 5,
-      date: "02/08/2026",
-      comment: "Qualité exceptionnelle ! Confortable au quotidien.",
-    },
-    {
-      id: "2",
-      author: "Sonia M.",
-      rating: 5,
-      date: "28/07/2026",
-      comment: "Finition parfaite, rendu très naturel sous les vêtements.",
-    },
-  ]);
+  // Vrais états pour les avis
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   const [newRating, setNewRating] = useState(5);
   const [newAuthor, setNewAuthor] = useState("");
   const [newComment, setNewComment] = useState("");
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Charger les avis validés de ce produit au montage
+  useEffect(() => {
+    async function loadReviews() {
+      try {
+        const data = await getApprovedReviews(product.id);
+        setReviews(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingReviews(false);
+      }
+    }
+    loadReviews();
+  }, [product.id]);
 
   const mainImage =
     product.images && product.images.length > 0
@@ -88,23 +93,28 @@ export default function ProductDrawer({
     onClose();
   };
 
-  const handleAddReview = (e: React.FormEvent) => {
+  const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAuthor.trim() || !newComment.trim()) return;
 
-    setReviews([
-      {
-        id: Date.now().toString(),
-        author: newAuthor,
-        rating: newRating,
-        date: new Date().toLocaleDateString("fr-FR"),
-        comment: newComment,
-      },
-      ...reviews,
-    ]);
-    setNewAuthor("");
-    setNewComment("");
-    setShowReviewForm(false);
+    setSubmitting(true);
+    const res = await createReview({
+      productId: product.id,
+      author: newAuthor,
+      rating: newRating,
+      comment: newComment,
+    });
+    setSubmitting(false);
+
+    if (res.success) {
+      setSuccessMessage("Merci ! Votre avis a été envoyé et est en attente de modération.");
+      setNewAuthor("");
+      setNewComment("");
+      setShowReviewForm(false);
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } else {
+      alert("Une erreur est survenue lors de l'envoi de votre avis.");
+    }
   };
 
   return (
@@ -190,6 +200,7 @@ export default function ProductDrawer({
 
             <ProductDescription description={product.description || ""} />
 
+            {/* SECTION AVIS CLIENTS DYNAMIQUE */}
             <div className="pt-4 border-t border-[#E88D9E]/15 space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium">
@@ -203,6 +214,12 @@ export default function ProductDrawer({
                   {showReviewForm ? "Fermer" : "+ Donnez votre avis"}
                 </button>
               </div>
+
+              {successMessage && (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] p-2.5 rounded-xl font-mono">
+                  {successMessage}
+                </div>
+              )}
 
               {showReviewForm && (
                 <form onSubmit={handleAddReview} className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-2.5 shadow-2xs">
@@ -248,27 +265,36 @@ export default function ProductDrawer({
 
                   <button
                     type="submit"
-                    className="w-full py-2 bg-[#2C2224] text-white text-[9px] font-mono uppercase tracking-widest rounded-lg font-medium hover:bg-[#E88D9E] transition cursor-pointer"
+                    disabled={submitting}
+                    className="w-full py-2 bg-[#2C2224] text-white text-[9px] font-mono uppercase tracking-widest rounded-lg font-medium hover:bg-[#E88D9E] transition cursor-pointer disabled:opacity-50"
                   >
-                    Publier
+                    {submitting ? "Publication..." : "Publier"}
                   </button>
                 </form>
               )}
 
               <div className="space-y-2">
-                {reviews.map((r) => (
-                  <div key={r.id} className="bg-white/80 p-2.5 rounded-xl border border-gray-100/80 space-y-0.5">
-                    <div className="flex justify-between items-center text-[9px] font-mono">
-                      <span className="font-semibold text-[#2C2224]">{r.author}</span>
-                      <span className="text-gray-300">{r.date}</span>
+                {loadingReviews ? (
+                  <p className="text-[10px] text-gray-400 italic">Chargement des avis...</p>
+                ) : reviews.length === 0 ? (
+                  <p className="text-[10px] text-gray-400 italic">Soyez le premier à donner votre avis sur cet article.</p>
+                ) : (
+                  reviews.map((r) => (
+                    <div key={r.id} className="bg-white/80 p-2.5 rounded-xl border border-gray-100/80 space-y-0.5">
+                      <div className="flex justify-between items-center text-[9px] font-mono">
+                        <span className="font-semibold text-[#2C2224]">{r.author}</span>
+                        <span className="text-gray-300">
+                          {new Date(r.createdAt).toLocaleDateString("fr-FR")}
+                        </span>
+                      </div>
+                      <div className="text-amber-400 text-[10px]">
+                        {"★".repeat(r.rating)}
+                        <span className="text-gray-200">{"★".repeat(5 - r.rating)}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-500 font-sans italic">{r.comment}</p>
                     </div>
-                    <div className="text-amber-400 text-[10px]">
-                      {"★".repeat(r.rating)}
-                      <span className="text-gray-200">{"★".repeat(5 - r.rating)}</span>
-                    </div>
-                    <p className="text-[10px] text-gray-500 font-sans italic">{r.comment}</p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
