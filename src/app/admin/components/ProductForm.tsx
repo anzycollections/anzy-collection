@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function ProductForm({ editingProduct, onSave }: Props) {
-  const { content, saveContent } = useStore();
+  const { content } = useStore();
 
   const [form, setForm] = useState({
     brand: "ANZY COLLECTION",
@@ -212,16 +212,6 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
       variantes: form.variantes,
     };
 
-    const currentProducts = content?.produits || content?.products || [];
-    const updatedProducts = editingProduct
-      ? currentProducts.map((p: any) => (p.id === product.id ? product : p))
-      : [...currentProducts, product];
-
-    saveContent({
-      ...content,
-      produits: updatedProducts,
-      products: updatedProducts,
-    });
     onSave(product);
   };
 

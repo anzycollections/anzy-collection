@@ -1,6 +1,6 @@
 "use client";
 
-import { useStore } from "@/context/StoreContext";
+import { useStore, Langue, Devise } from "@/context/StoreContext";
 import { useCart } from "@/context/CartContext";
 
 interface HeaderProps {
@@ -62,7 +62,7 @@ export default function Header({ onOpenCart }: HeaderProps) {
         <div className="flex items-center justify-between pt-2 border-t border-[#E88D9E]/10">
           <select
             value={langue}
-            onChange={(e) => setLangue(e.target.value)}
+            onChange={(e) => setLangue(e.target.value as Langue)}
             className="bg-white/80 border border-gray-200 text-[10px] font-mono rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#E88D9E] text-[#2C2224] cursor-pointer shadow-sm"
           >
             <option value="FR">🇫🇷 FR</option>
@@ -71,7 +71,7 @@ export default function Header({ onOpenCart }: HeaderProps) {
 
           <select
             value={devise}
-            onChange={(e) => setDevise(e.target.value)}
+            onChange={(e) => setDevise(e.target.value as Devise)}
             className="bg-white/80 border border-gray-200 text-[10px] font-mono rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#E88D9E] text-[#2C2224] cursor-pointer shadow-sm"
           >
             <option value="XOF">F CFA</option>

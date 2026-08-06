@@ -9,7 +9,7 @@ import CategoryManager from "./components/CategoryManager";
 type Tab = "products" | "categories" | "hero" | "about" | "footer";
 
 export default function AdminPage() {
-  const { content, saveContent } = useStore();
+  const { content, products, saveContent, addProduct, updateProduct, deleteProduct } = useStore();
   const [activeTab, setActiveTab] = useState<Tab>("products");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -17,11 +17,13 @@ export default function AdminPage() {
   const heroFileRef = useRef<HTMLInputElement>(null);
   const aboutFileRef = useRef<HTMLInputElement>(null);
 
-  // Récupération sécurisée du tableau de produits (Support de 'produits' ou 'products')
-  const productList: Product[] = content?.produits || content?.products || [];
+  // Les produits viennent directement de la base de données (table "products")
+  const productList: Product[] = products || [];
 
-  const [heroForm, setHeroForm] = useState(content?.hero || { badge: "", title: "", subtitle: "", cta: "", images: [] });
-  const [aboutForm, setAboutForm] = useState(content?.about || { subtitle: "", title: "", paragraph1: "", paragraph2: "", image: "", stats: [] });
+  const [heroForm, setHeroForm] = useState(content?.hero || { badge: "", title: "", subtitle: "", buttonText: "", images: [] });
+  const [aboutForm, setAboutForm] = useState(
+    content?.about || { subtitle: "", title: "", founderName: "", founderRole: "", quote: "", description: "", image: "" }
+  );
   const [footerForm, setFooterForm] = useState(content?.footer || { copyright: "" });
   const [socialForm, setSocialForm] = useState(content?.social || { instagram: "", tiktok: "", facebook: "" });
 
@@ -39,32 +41,30 @@ export default function AdminPage() {
     p?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Sauvegarde des produits (Garde la clé 'produits' du Store)
-  const handleSaveProduct = (productData: Product) => {
-    let updatedProducts: Product[];
-    
-    if (editingProduct) {
-      updatedProducts = productList.map((p) => (p.id === editingProduct.id ? productData : p));
-    } else {
-      updatedProducts = [...productList, { ...productData, id: productData.id || Date.now().toString() }];
+  // Sauvegarde d'un produit dans la vraie base de données (table "products")
+  const handleSaveProduct = async (productData: Product) => {
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+      } else {
+        await addProduct(productData);
+      }
+      setShowForm(false);
+      setEditingProduct(null);
+    } catch (e) {
+      console.error(e);
+      alert("Une erreur est survenue lors de l'enregistrement du produit.");
     }
-
-    saveContent({
-      ...content,
-      produits: updatedProducts,
-    });
-
-    setShowForm(false);
-    setEditingProduct(null);
   };
 
-  // Suppression d'un produit
-  const handleDeleteProduct = (productId: string) => {
-    const updatedProducts = productList.filter((p) => p.id !== productId);
-    saveContent({
-      ...content,
-      produits: updatedProducts,
-    });
+  // Suppression d'un produit dans la vraie base de données
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteProduct(productId);
+    } catch (e) {
+      console.error(e);
+      alert("Une erreur est survenue lors de la suppression du produit.");
+    }
   };
 
   const saveHero = () => {
@@ -240,7 +240,7 @@ export default function AdminPage() {
 
             <div>
               <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Texte du bouton principal (CTA)</label>
-              <input type="text" value={heroForm.cta} onChange={(e) => setHeroForm({ ...heroForm, cta: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
+              <input type="text" value={heroForm.buttonText} onChange={(e) => setHeroForm({ ...heroForm, buttonText: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
             </div>
 
             <div>
@@ -290,14 +290,25 @@ export default function AdminPage() {
               <input type="text" value={aboutForm.title} onChange={(e) => setAboutForm({ ...aboutForm, title: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
             </div>
 
-            <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Paragraphe 1</label>
-              <textarea value={aboutForm.paragraph1} onChange={(e) => setAboutForm({ ...aboutForm, paragraph1: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs h-20 focus:border-[#E88D9E] focus:outline-none resize-none" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Nom de la fondatrice</label>
+                <input type="text" value={aboutForm.founderName} onChange={(e) => setAboutForm({ ...aboutForm, founderName: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
+              </div>
+              <div>
+                <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Rôle de la fondatrice</label>
+                <input type="text" value={aboutForm.founderRole} onChange={(e) => setAboutForm({ ...aboutForm, founderRole: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:border-[#E88D9E] focus:outline-none" />
+              </div>
             </div>
 
             <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Paragraphe 2</label>
-              <textarea value={aboutForm.paragraph2} onChange={(e) => setAboutForm({ ...aboutForm, paragraph2: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs h-20 focus:border-[#E88D9E] focus:outline-none resize-none" />
+              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Citation</label>
+              <textarea value={aboutForm.quote} onChange={(e) => setAboutForm({ ...aboutForm, quote: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs h-16 focus:border-[#E88D9E] focus:outline-none resize-none" />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Description</label>
+              <textarea value={aboutForm.description} onChange={(e) => setAboutForm({ ...aboutForm, description: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs h-20 focus:border-[#E88D9E] focus:outline-none resize-none" />
             </div>
 
             <div>

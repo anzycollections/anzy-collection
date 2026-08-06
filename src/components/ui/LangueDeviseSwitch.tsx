@@ -8,10 +8,8 @@ export default function LangueDeviseSwitch() {
   return (
     <div className="flex items-center justify-center gap-2 py-1.5">
       <div className="flex items-center gap-0.5 bg-white/80 rounded-full px-1.5 py-0.5 shadow-sm border border-[#E88D9E]/10">
-        <button onClick={() => setLangue("fr")} className={`text-sm p-0.5 transition ${langue === "fr" ? "scale-110" : "opacity-30"}`}>🇫🇷</button>
-        <button onClick={() => setLangue("en")} className={`text-sm p-0.5 transition ${langue === "en" ? "scale-110" : "opacity-30"}`}>🇬🇧</button>
-        <button onClick={() => setLangue("es")} className={`text-sm p-0.5 transition ${langue === "es" ? "scale-110" : "opacity-30"}`}>🇪🇸</button>
-        <button onClick={() => setLangue("pt")} className={`text-sm p-0.5 transition ${langue === "pt" ? "scale-110" : "opacity-30"}`}>🇵🇹</button>
+        <button onClick={() => setLangue("FR")} className={`text-sm p-0.5 transition ${langue === "FR" ? "scale-110" : "opacity-30"}`}>🇫🇷</button>
+        <button onClick={() => setLangue("EN")} className={`text-sm p-0.5 transition ${langue === "EN" ? "scale-110" : "opacity-30"}`}>🇬🇧</button>
       </div>
       <div className="flex items-center gap-0.5 bg-white/80 rounded-full px-1.5 py-0.5 shadow-sm border border-[#E88D9E]/10">
         <button onClick={() => setDevise("EUR")} className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition ${devise === "EUR" ? "bg-[#E88D9E] text-white" : "text-gray-400"}`}>€</button>

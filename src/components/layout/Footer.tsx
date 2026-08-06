@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useStore } from "@/context/StoreContext";
 
 export default function Footer() {
+  const { content } = useStore();
+  const social = content?.social || {};
+  const copyright = content?.footer?.copyright || "© Anzy Collection.";
+
   return (
     <footer className="pt-4 pb-8 bg-[#FAF7F5] text-[#2C2224] border-t border-gray-200/60">
       <div className="max-w-4xl mx-auto px-4 text-center space-y-4">
@@ -21,7 +26,7 @@ export default function Footer() {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-3 border border-gray-100 shadow-2xs max-w-lg mx-auto">
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] font-mono uppercase tracking-wider font-semibold text-gray-600">
             <a
-              href="https://instagram.com"
+              href={social.instagram || "https://instagram.com"}
               target="_blank"
               rel="noreferrer"
               className="hover:text-[#E88D9E] transition"
@@ -29,7 +34,7 @@ export default function Footer() {
               Instagram
             </a>
             <a
-              href="https://tiktok.com"
+              href={social.tiktok || "https://tiktok.com"}
               target="_blank"
               rel="noreferrer"
               className="hover:text-[#E88D9E] transition"
@@ -37,7 +42,7 @@ export default function Footer() {
               TikTok
             </a>
             <a
-              href="https://facebook.com"
+              href={social.facebook || "https://facebook.com"}
               target="_blank"
               rel="noreferrer"
               className="hover:text-[#E88D9E] transition"
