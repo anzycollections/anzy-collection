@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Product, useStore } from "@/context/StoreContext";
-import useCart from "@/context/CartContext";
+import { useCart } from "@/context/CartContext";
 import ProductDescription from "./ProductDescription";
 import VariantSelector from "./VariantSelector";
 
@@ -30,6 +30,7 @@ export default function ProductDrawer({
   const store = useStore() as any;
   const convertirPrix = store?.convertirPrix || ((p: number) => p);
   const symboleDevise = store?.symboleDevise || "F CFA";
+  
   const { addToCart } = useCart();
 
   const variantes = product.variantes || [];
