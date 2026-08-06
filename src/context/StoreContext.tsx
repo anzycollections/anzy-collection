@@ -27,7 +27,7 @@ export interface Product {
   brand?: string;
   name: string;
   categoryId?: string | null;
-  category?: string | null; // 👈 Champ ajouté pour compatibilité avec ProductForm
+  category?: string | null;
   badge?: string | null;
   description?: string | null;
   price: number | string;
@@ -45,11 +45,14 @@ export interface Product {
 
 export interface StoreContent {
   categories?: Category[];
+  products?: Product[];
+  produits?: Product[];
   hero?: {
     badge?: string;
     title?: string;
     subtitle?: string;
     buttonText?: string;
+    cta?: string;
     images?: string[];
   };
   about?: {
@@ -59,7 +62,21 @@ export interface StoreContent {
     founderRole?: string;
     quote?: string;
     description?: string;
+    paragraph1?: string;
+    paragraph2?: string;
     image?: string;
+  };
+  footer?: {
+    brandName?: string;
+    tagline?: string;
+    copyright?: string;
+    whatsapp?: string;
+  };
+  social?: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+    whatsapp?: string;
   };
 }
 
@@ -67,6 +84,10 @@ interface StoreContextType {
   products: Product[];
   content: StoreContent;
   loading: boolean;
+  devise: string;
+  symboleDevise: string;
+  setDevise: (devise: string) => void;
+  convertirPrix: (montant: number | string) => string;
   refreshAll: () => Promise<void>;
   addProduct: (product: Partial<Product>) => Promise<void>;
   updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
@@ -81,6 +102,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [content, setContent] = useState<StoreContent>({});
   const [loading, setLoading] = useState(true);
+  const [devise, setDevise] = useState("XOF");
+
+  const symbolesMap: Record<string, string> = {
+    XOF: "FCFA",
+    EUR: "€",
+    USD: "$",
+  };
+
+  const symboleDevise = symbolesMap[devise] || "FCFA";
+
+  const convertirPrix = (montant: number | string): string => {
+    const prixNum = Number(montant) || 0;
+    
+    // Taux de conversion de base depuis le XOF
+    let montantConverti = prixNum;
+    if (devise === "EUR") montantConverti = prixNum / 655.957;
+    if (devise === "USD") montantConverti = prixNum / 600;
+
+    return `${Math.round(montantConverti).toLocaleString("fr-FR")} ${symboleDevise}`;
+  };
 
   const refreshAll = async () => {
     try {
@@ -102,7 +143,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (resContent.ok) {
         const dataContent = await resContent.json();
-        if (dataContent.about || dataContent.hero || dataContent.categories) {
+        if (
+          dataContent.about ||
+          dataContent.hero ||
+          dataContent.categories ||
+          dataContent.produits ||
+          dataContent.products ||
+          dataContent.footer ||
+          dataContent.social
+        ) {
           setContent(dataContent);
         }
       }
@@ -170,6 +219,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         products,
         content,
         loading,
+        devise,
+        symboleDevise,
+        setDevise,
+        convertirPrix,
         refreshAll,
         addProduct,
         updateProduct,
