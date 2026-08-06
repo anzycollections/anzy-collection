@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "@/context/CartContext";
-import { useStore } from "@/context/StoreContext";
+import { useStore, Langue, Devise } from "@/context/StoreContext";
 import { useState, useRef, useEffect } from "react";
 
 export default function Header({ onOpenCart }: { onOpenCart: () => void }) {
@@ -29,8 +29,7 @@ export default function Header({ onOpenCart }: { onOpenCart: () => void }) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FAF7F5]/95 backdrop-blur-md border-b border-[#E88D9E]/15">
-      {/* Ligne principale : Logo réduit et centré, Panier à droite */}
+    <header className="sticky top-0 z-50 bg-[#FAF7F5]/95 backdrop-blur-md border-b border-[#E88D9E]/15">
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between relative">
         <div className="w-10 hidden sm:block" />
 
@@ -63,37 +62,34 @@ export default function Header({ onOpenCart }: { onOpenCart: () => void }) {
         </div>
       </div>
 
-      {/* Ligne séparatrice */}
       <div className="w-full border-t border-[#E88D9E]/10" />
 
-      {/* Sous-ligne : Langue à gauche, Devise à droite */}
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-2.5 flex items-center justify-between">
-        
         {/* Sélecteur de Langue (Gauche) */}
         <div className="relative" ref={langRef}>
           <button
             onClick={() => setLangOpen(!langOpen)}
             className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-xl border border-gray-200 shadow-2xs text-xs font-medium text-[#2C2224] hover:border-[#E88D9E] transition cursor-pointer"
           >
-            <span className="text-sm">🇫🇷</span>
+            <span className="text-sm">
+              {langue === "FR" ? "🇫🇷" : langue === "EN" ? "🇬🇧" : langue === "ES" ? "🇪🇸" : "🇵🇹"}
+            </span>
             <span className="font-mono font-bold">{langue}</span>
             <span className={`text-[9px] text-gray-400 transition-transform ${langOpen ? "rotate-180" : ""}`}>▼</span>
           </button>
 
           {langOpen && (
-            <div className="absolute left-0 mt-2 w-28 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden z-50 py-1">
-              <button
-                onClick={() => { setLangue("FR"); setLangOpen(false); }}
-                className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-gray-50 ${langue === "FR" ? "font-bold text-[#E88D9E]" : "text-gray-700"}`}
-              >
-                <span>🇫🇷</span> FR
-              </button>
-              <button
-                onClick={() => { setLangue("EN"); setLangOpen(false); }}
-                className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-gray-50 ${langue === "EN" ? "font-bold text-[#E88D9E]" : "text-gray-700"}`}
-              >
-                <span>🇬🇧</span> EN
-              </button>
+            <div className="absolute left-0 mt-2 w-32 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden z-50 py-1">
+              {(["FR", "EN", "ES", "PT"] as Langue[]).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => { setLangue(l); setLangOpen(false); }}
+                  className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-gray-50 ${langue === l ? "font-bold text-[#E88D9E]" : "text-gray-700"}`}
+                >
+                  <span>{l === "FR" ? "🇫🇷" : l === "EN" ? "🇬🇧" : l === "ES" ? "🇪🇸" : "🇵🇹"}</span>
+                  <span className="font-mono">{l}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -110,28 +106,18 @@ export default function Header({ onOpenCart }: { onOpenCart: () => void }) {
 
           {deviseOpen && (
             <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden z-50 py-1">
-              <button
-                onClick={() => { setDevise("XOF"); setDeviseOpen(false); }}
-                className={`w-full px-3 py-2 text-left text-xs font-mono ${devise === "XOF" ? "font-bold text-[#E88D9E]" : "text-gray-700"} hover:bg-gray-50`}
-              >
-                F CFA
-              </button>
-              <button
-                onClick={() => { setDevise("EUR"); setDeviseOpen(false); }}
-                className={`w-full px-3 py-2 text-left text-xs font-mono ${devise === "EUR" ? "font-bold text-[#E88D9E]" : "text-gray-700"} hover:bg-gray-50`}
-              >
-                EUR (€)
-              </button>
-              <button
-                onClick={() => { setDevise("USD"); setDeviseOpen(false); }}
-                className={`w-full px-3 py-2 text-left text-xs font-mono ${devise === "USD" ? "font-bold text-[#E88D9E]" : "text-gray-700"} hover:bg-gray-50`}
-              >
-                USD ($)
-              </button>
+              {(["XOF", "EUR", "USD"] as Devise[]).map((d) => (
+                <button
+                  key={d}
+                  onClick={() => { setDevise(d); setDeviseOpen(false); }}
+                  className={`w-full px-3 py-2 text-left text-xs font-mono ${devise === d ? "font-bold text-[#E88D9E]" : "text-gray-700"} hover:bg-gray-50`}
+                >
+                  {d === "XOF" ? "F CFA" : d === "EUR" ? "EUR (€)" : "USD ($)"}
+                </button>
+              ))}
             </div>
           )}
         </div>
-
       </div>
     </header>
   );
