@@ -66,11 +66,10 @@ export default function ProductDrawer({
     loadReviews();
   }, [product.id]);
 
-  const mainImage =
-    product.images && product.images.length > 0
-      ? product.images[0]
-      : "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&q=80";
-
+  const mainImage = product.images && product.images.length > 0
+  ? product.images[0]
+  : "/images/placeholder-product.jpg";
+  
   const currentPrice = selectedVariante?.price || product.price || 0;
   const priceFormatted = convertirPrix(currentPrice * quantity).toLocaleString();
 

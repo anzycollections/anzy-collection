@@ -152,7 +152,7 @@ const LANGUE_KEY = "anzy-langue";
 const DEVISE_KEY = "anzy-devise";
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(DEFAULT_FALLBACK_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([
     { id: "gaines", name: "Gaines", visible: true },
     { id: "huiles", name: "Huiles Essentielles", visible: true }

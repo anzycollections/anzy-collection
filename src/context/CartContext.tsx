@@ -19,6 +19,7 @@ export interface CartItem {
 export interface CartContextType {
   items: CartItem[];
   cart: CartItem[];
+  isLoaded: boolean;
   addToCart: (item: CartItem) => void;
   removeFromCart: (productId: string, varianteId: string) => void;
   updateQuantity: (productId: string, varianteId: string, quantity: number) => void;
@@ -38,7 +39,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { content } = useStore();
-  
+
   // Initialisation paresseuse depuis localStorage
   const [items, setItems] = useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -97,7 +98,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const total = subtotal + shippingCost;
 
   return (
-    <CartContext.Provider value={{ items, cart: items, addToCart, removeFromCart, updateQuantity, clearCart, country, setCountry, shippingOptions, selectedShipping, setSelectedShipping, subtotal, shippingCost, total, totalPrice: total }}>
+    <CartContext.Provider value={{ items, cart: items, isLoaded, addToCart, removeFromCart, updateQuantity, clearCart, country, setCountry, shippingOptions, selectedShipping, setSelectedShipping, subtotal, shippingCost, total, totalPrice: total }}>
       {children}
     </CartContext.Provider>
   );

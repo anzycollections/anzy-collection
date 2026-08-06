@@ -7,15 +7,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPage() {
-  const { items, subtotal, total, country, selectedShipping } = useCart();
+  const { items, subtotal, total, country, selectedShipping, isLoaded } = useCart();
   const { convertirPrix, symboleDevise } = useStore();
   const router = useRouter();
-
-  // Redirection si le panier est vide
-  if (items.length === 0) {
-    if (typeof window !== "undefined") router.push("/");
-    return null;
-  }
 
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "", address: "", city: ""
@@ -26,6 +20,17 @@ export default function CheckoutPage() {
   const [uploading, setUploading] = useState(false);
   const [receiptUrl, setReceiptUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Attendre que le panier soit relu depuis localStorage avant de décider quoi que ce soit
+  if (!isLoaded) {
+    return null; // ou un petit spinner si tu veux un retour visuel pendant ce court instant
+  }
+
+  // Redirection seulement une fois qu'on est sûr que le panier est vraiment vide
+  if (items.length === 0) {
+    if (typeof window !== "undefined") router.push("/");
+    return null;
+  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // Cette fonction sera connectée à Vercel Blob à l'étape suivante
@@ -62,10 +67,10 @@ export default function CheckoutPage() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          
+
           {/* COLONNE GAUCHE : FORMULAIRES */}
           <div className="lg:col-span-7 space-y-10">
-            
+
             {/* Étape 1 : Coordonnées */}
             <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="font-serif font-bold text-lg mb-6 border-b border-gray-100 pb-4">1. Vos Coordonnées</h2>
@@ -86,7 +91,7 @@ export default function CheckoutPage() {
             {/* Étape 2 : Paiement & Preuve */}
             <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
               <h2 className="font-serif font-bold text-lg mb-6 border-b border-gray-100 pb-4">2. Paiement & Reçu</h2>
-              
+
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <button type="button" onClick={() => setPaymentMethod("mobile_money")} className={`py-3 text-xs font-mono font-bold rounded-xl border transition-all ${paymentMethod === "mobile_money" ? "bg-[#2C2224] text-white border-[#2C2224]" : "bg-white text-gray-500 border-gray-200 hover:border-[#E88D9E]"}`}>
                   MOBILE MONEY
@@ -134,7 +139,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-5">
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg shadow-[#E88D9E]/5 border border-[#E88D9E]/20 sticky top-24">
               <h2 className="font-serif font-bold text-lg mb-6">Résumé de la commande</h2>
-              
+
               <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2">
                 {items.map((item, idx) => (
                   <div key={idx} className="flex gap-4 items-center">
