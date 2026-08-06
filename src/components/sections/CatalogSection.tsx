@@ -1,165 +1,155 @@
 "use client";
 
+import { useState } from "react";
 import { Product, useStore } from "@/context/StoreContext";
+import ProductCard from "@/components/ui/ProductCard";
 
-interface ProductCardProps {
-  product: Product;
-  onSelect: (product: Product) => void;
-  favorites: { [key: string]: boolean };
-  onToggleFavorite: (id: string, e: React.MouseEvent) => void;
-  viewMode?: "grid" | "list";
+interface CatalogSectionProps {
+  activeCategory: string;
+  onCategoryChange: (catId: string) => void;
+  onSelectProduct: (product: Product) => void;
 }
 
-export default function ProductCard({
-  product,
-  onSelect,
-  favorites,
-  onToggleFavorite,
-  viewMode = "grid",
-}: ProductCardProps) {
-  const { convertirPrix, symboleDevise } = useStore();
+export default function CatalogSection({
+  activeCategory,
+  onCategoryChange,
+  onSelectProduct,
+}: CatalogSectionProps) {
+  const { content } = useStore();
+  const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const prixMin = product.variantes && product.variantes.length > 0
-    ? Math.min(...product.variantes.filter(v => v.active).map(v => v.price))
-    : product.price;
+  const categories = content?.categories || [];
+  const products = content?.products || [];
 
-  const prixAffiche = convertirPrix(prixMin);
-  const hasVariantes = product.variantes && product.variantes.length > 0;
-
-  const formatPrix = () => {
-    const affiche = `${prixAffiche.toLocaleString()} ${symboleDevise === "F CFA" ? "F CFA" : symboleDevise}`;
-    return hasVariantes ? `À partir de ${affiche}` : affiche;
+  const handleToggleFavorite = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const mainImage = product.images?.[0] || product.variantes?.find(v => v.active && v.image)?.image || "";
+  const filteredProducts = products.filter((p: Product) => {
+    if (!p.visible) return false;
+    if (activeCategory === "all") return true;
+    return p.category === activeCategory;
+  });
 
-  // ---- MODE LISTE : carte compacte en ligne ----
-  if (viewMode === "list") {
-    return (
-      <div
-        onClick={() => onSelect(product)}
-        className="group glass-card glass-card-hover rounded-2xl p-3 cursor-pointer flex items-center gap-4 relative text-[#2C2224]"
-      >
-        {/* Visuel */}
-        <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center overflow-hidden rounded-xl bg-white/40 backdrop-blur-md border border-white/60">
-          {mainImage ? (
-            <img
-              src={mainImage}
-              alt={product.name}
-              className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500 ease-out p-1.5"
-            />
-          ) : (
-            <span className="text-2xl text-gray-300">📷</span>
-          )}
-        </div>
-
-        {/* Informations */}
-        <div className="flex-1 min-w-0 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold">
-              {product.brand || "ANZY COLLECTION"}
-            </span>
-            <span className="text-[8px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#FAF7F5] text-[#2C2224] border border-gray-100 shrink-0">
-              {product.badge || "Nouveauté"}
-            </span>
-          </div>
-
-          <h3 className="text-sm font-serif font-bold text-[#2C2224] group-hover:text-[#E88D9E] transition truncate">
-            {product.name}
-          </h3>
-
-          {product.description && (
-            <p className="text-[11px] text-gray-500 line-clamp-1 font-light">
-              {product.description}
-            </p>
-          )}
-
-          <span className="text-xs font-bold text-[#2C2224] block">
-            {formatPrix()}
-          </span>
-        </div>
-
-        {/* Favori */}
-        <button
-          type="button"
-          onClick={(e) => onToggleFavorite(product.id, e)}
-          className="w-9 h-9 rounded-full glass-pill flex items-center justify-center text-sm shadow-sm hover:scale-110 transition shrink-0"
-        >
-          <span className={favorites[product.id] ? "text-[#E88D9E]" : "text-gray-400"}>
-            {favorites[product.id] ? "♥" : "♡"}
-          </span>
-        </button>
-      </div>
-    );
-  }
-
-  // ---- MODE GRILLE (par défaut, design d'origine inchangé) ----
   return (
-    <div
-      onClick={() => onSelect(product)}
-      className="group glass-card glass-card-hover rounded-3xl p-5 cursor-pointer flex flex-col justify-between relative text-[#2C2224]"
-    >
-      {/* Bouton Favori Glass */}
-      <button
-        type="button"
-        onClick={(e) => onToggleFavorite(product.id, e)}
-        className="absolute top-6 right-6 z-10 w-9 h-9 rounded-full glass-pill flex items-center justify-center text-sm shadow-sm hover:scale-110 transition"
-      >
-        <span className={favorites[product.id] ? "text-[#E88D9E]" : "text-gray-400"}>
-          {favorites[product.id] ? "♥" : "♡"}
-        </span>
-      </button>
-
-      {/* Badge Nouveauté / Bestseller */}
-      <div className="absolute top-6 left-6 z-10">
-        <span className="glass-pill text-[#2C2224] text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-full font-bold">
-          {product.badge || "Nouveauté"}
-        </span>
-      </div>
-
-      {/* Visuel du produit */}
-      <div className="h-64 sm:h-72 w-full flex items-center justify-center my-3 overflow-hidden rounded-2xl bg-white/40 backdrop-blur-md border border-white/60">
-        {mainImage ? (
-          <img
-            src={mainImage}
-            alt={product.name}
-            className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500 ease-out p-2"
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-gray-300 space-y-2">
-            <span className="text-4xl">📷</span>
-            <span className="text-[10px] font-mono uppercase tracking-wider">Image à venir</span>
+    <section id="catalog" className="space-y-8 scroll-mt-20">
+      {/* En-tête de section */}
+      <div className="flex flex-col gap-4 border-b border-[#E88D9E]/15 pb-6">
+        {/* Titre et Toggle sur la même ligne */}
+        <div className="flex flex-row items-end justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold block">
+              NOTRE SÉLECTION
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#2C2224] mt-1">
+              Le Catalogue
+            </h2>
           </div>
-        )}
-      </div>
 
-      {/* Informations Produit */}
-      <div className="space-y-2 pt-2">
-        <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase block font-bold">
-          {product.brand || "ANZY COLLECTION"}
-        </span>
-
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1">
-          <h3 className="text-sm font-serif font-bold text-[#2C2224] group-hover:text-[#E88D9E] transition line-clamp-2">
-            {product.name}
-          </h3>
-          <span className="text-xs font-bold text-[#2C2224] shrink-0">
-            {formatPrix()}
-          </span>
+          {/* Toggle Grille / Liste — Remonté ici */}
+          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-full p-1 shrink-0 mb-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              aria-label="Affichage en grille"
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                viewMode === "grid"
+                  ? "bg-[#2C2224] text-white shadow-sm"
+                  : "text-gray-400 hover:text-[#2C2224]"
+              }`}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              aria-label="Affichage en liste"
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                viewMode === "list"
+                  ? "bg-[#2C2224] text-white shadow-sm"
+                  : "text-gray-400 hover:text-[#2C2224]"
+              }`}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {product.description && (
-          <p className="text-[11px] text-gray-500 line-clamp-2 font-light">
-            {product.description}
+        {/* Ligne catégories */}
+        <div className="flex items-center gap-3">
+          {/* Navigation par catégories — prend l'espace dispo, scrollable */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-2 sm:pb-0 flex-1 min-w-0">
+            <button
+              type="button"
+              onClick={() => onCategoryChange("all")}
+              className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                activeCategory === "all"
+                  ? "bg-[#2C2224] text-white shadow-md"
+                  : "bg-white text-gray-600 border border-gray-200 hover:border-[#E88D9E]"
+              }`}
+            >
+              Tous les articles
+            </button>
+
+            {categories
+              .filter((c: any) => c.visible)
+              .map((cat: any) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => onCategoryChange(cat.id)}
+                  className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                    activeCategory === cat.id
+                      ? "bg-[#2C2224] text-white shadow-md"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-[#E88D9E]"
+                  }`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Grille des cartes produits */}
+      {filteredProducts.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-200 space-y-3">
+          <span className="text-4xl block">✨</span>
+          <p className="text-sm font-medium text-[#2C2224]">
+            Aucun article disponible dans cette catégorie pour le moment.
           </p>
-        )}
-
-        <div className="pt-3 border-t border-[#E88D9E]/10 flex items-center justify-between">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[#E88D9E] group-hover:translate-x-1 transition font-bold">
-            Découvrir la pièce →
-          </span>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div
+          className={
+            viewMode === "list"
+              ? "flex flex-col gap-4"
+              : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          }
+        >
+          {filteredProducts.map((product: Product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onSelect={onSelectProduct}
+              favorites={favorites}
+              onToggleFavorite={handleToggleFavorite}
+              viewMode={viewMode}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

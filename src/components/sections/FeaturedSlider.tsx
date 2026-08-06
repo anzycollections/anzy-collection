@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useStore, Product } from "@/context/StoreContext";
 import ProductCard from "@/components/ui/ProductCard";
 
@@ -9,6 +10,7 @@ interface FeaturedSliderProps {
 
 export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps) {
   const { content } = useStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const allProducts: Product[] = content?.products || [];
   const visibleProducts = allProducts.filter((p: Product) => p.visible);
@@ -18,7 +20,9 @@ export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps)
       p.badge === "Bestseller" ||
       p.badge === "Incontournable" ||
       p.badge === "Tendance" ||
-      p.badge === "Nouveauté"
+      p.badge === "Nouveauté" ||
+      p.badge === "BESTSELLER" || 
+      p.badge === "NOUVEAUTÉ"
   );
 
   const displayProducts =
@@ -26,13 +30,37 @@ export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps)
       ? taggedProducts.slice(0, 4)
       : visibleProducts.slice(0, 4);
 
+  // DÉFILEMENT AUTOMATIQUE TOUTES LES 2 SECONDES
+  useEffect(() => {
+    if (displayProducts.length <= 1) return; // Pas besoin de scroller s'il y a 0 ou 1 produit
+
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        
+        // Si on a atteint la fin du slider (à 5px près pour la marge d'erreur)
+        if (scrollLeft + clientWidth >= scrollWidth - 5) {
+          // On retourne au début en douceur
+          scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          // Sinon on avance d'une carte (environ 340px : largeur carte + espace)
+          scrollRef.current.scrollBy({ left: 340, behavior: "smooth" });
+        }
+      }
+    }, 2000); // 2000 millisecondes = 2 secondes
+
+    // Nettoyage de l'intervalle si on quitte le composant
+    return () => clearInterval(interval);
+  }, [displayProducts.length]);
+
   if (displayProducts.length === 0) {
     return null;
   }
 
   return (
     <section className="space-y-6 pt-10">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#E88D9E]/15 pb-4">
+      {/* En-tête de la section */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#E88D9E]/15 pb-4 px-1">
         <div>
           <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold block">
             SÉLECTION ANZY
@@ -46,15 +74,24 @@ export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps)
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* LE SLIDER HORIZONTAL AVEC LA RÉFÉRENCE */}
+      <div 
+        ref={scrollRef}
+        className="flex gap-5 overflow-x-auto scrollbar-none snap-x snap-mandatory pt-2 pb-6 px-1"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         {displayProducts.map((product: Product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onSelect={onSelectProduct}
-            favorites={{}}
-            onToggleFavorite={() => {}}
-          />
+          <div 
+            key={product.id} 
+            className="w-[280px] sm:w-[320px] shrink-0 snap-start"
+          >
+            <ProductCard
+              product={product}
+              onSelect={onSelectProduct}
+              favorites={{}}
+              onToggleFavorite={() => {}}
+            />
+          </div>
         ))}
       </div>
     </section>
