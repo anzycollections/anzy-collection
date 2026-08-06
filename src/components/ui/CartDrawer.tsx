@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
-import { useStore, VarianteCombi } from "@/context/StoreContext";
+import { useStore } from "@/context/StoreContext";
 import ProductDrawer from "@/components/ui/ProductDrawer";
 import CartItemRow from "../cart/CartItemRow";
 import ShippingSelector from "../cart/ShippingSelector";
 import CartFooter from "../cart/CartFooter";
+import { useRouter } from "next/navigation";
 
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, removeFromCart, updateQuantity, country, selectedShipping, subtotal, total } = useCart();
   const { products, convertirPrix, symboleDevise } = useStore();
   const [editingItem, setEditingItem] = useState<any>(null);
+  const router = useRouter();
 
   if (!isOpen) return null;
 
@@ -26,11 +28,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean; onClo
 
   const handleCheckout = () => {
     if (items.length === 0) return;
-    let message = "Bonjour Anzy Collection, je souhaite commander :\n\n";
-    items.forEach(i => message += `• *${i.productName}* x${i.quantity}\n`);
-    message += `\n📦 Livraison (${country} - ${selectedShipping?.name}) : ${convertirPrix(total - subtotal)} ${symboleDevise}\n`;
-    message += `\n*TOTAL : ${convertirPrix(total)} ${symboleDevise}*`;
-    window.open(`https://wa.me/22900000000?text=${encodeURIComponent(message)}`, "_blank");
+    onClose();
+    router.push("/checkout");
   };
 
   return (
