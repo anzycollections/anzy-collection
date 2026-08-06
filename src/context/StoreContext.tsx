@@ -87,6 +87,8 @@ interface StoreContextType {
   devise: string;
   symboleDevise: string;
   setDevise: (devise: string) => void;
+  langue: string; // 👈 Ajouté pour Header.tsx
+  setLangue: (langue: string) => void; // 👈 Ajouté pour Header.tsx
   convertirPrix: (montant: number | string) => string;
   refreshAll: () => Promise<void>;
   addProduct: (product: Partial<Product>) => Promise<void>;
@@ -103,6 +105,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState<StoreContent>({});
   const [loading, setLoading] = useState(true);
   const [devise, setDevise] = useState("XOF");
+  const [langue, setLangue] = useState("FR"); // 👈 État local pour la langue
 
   const symbolesMap: Record<string, string> = {
     XOF: "FCFA",
@@ -115,7 +118,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const convertirPrix = (montant: number | string): string => {
     const prixNum = Number(montant) || 0;
     
-    // Taux de conversion de base depuis le XOF
     let montantConverti = prixNum;
     if (devise === "EUR") montantConverti = prixNum / 655.957;
     if (devise === "USD") montantConverti = prixNum / 600;
@@ -222,6 +224,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         devise,
         symboleDevise,
         setDevise,
+        langue,
+        setLangue,
         convertirPrix,
         refreshAll,
         addProduct,
