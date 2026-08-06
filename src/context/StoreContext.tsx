@@ -73,7 +73,7 @@ export interface StoreContent {
   };
 }
 
-export type Langue = "FR" | "EN";
+export type Langue = "FR" | "EN" | "ES" | "PT";
 export type Devise = "XOF" | "EUR" | "USD";
 
 const symbolesDevises: Record<string, string> = { EUR: "€", XOF: "F CFA", USD: "$" };

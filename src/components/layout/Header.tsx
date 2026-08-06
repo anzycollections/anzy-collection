@@ -1,15 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { useStore, Langue, Devise } from "@/context/StoreContext";
 import { useCart } from "@/context/CartContext";
 
 interface HeaderProps {
-  onOpenCart?: () => void; // 👈 Ajouter le '?' ici
+  onOpenCart: () => void; // 👈 Plus de '?' ! On oblige le parent à fournir la fonction.
 }
 
 export default function Header({ onOpenCart }: HeaderProps) {
   const { devise, setDevise, langue, setLangue } = useStore();
-  const { totalItems } = useCart();
+  const { totalItems } = useCart(); 
+  
+  // État pour gérer l'ouverture de nos menus personnalisés
+  const [openDropdown, setOpenDropdown] = useState<"langue" | "devise" | null>(null);
+
+  const langOptions = [
+    { code: "FR", label: "🇫🇷 FR" },
+    { code: "EN", label: "🇬🇧 EN" },
+    { code: "ES", label: "🇪🇸 ES" },
+    { code: "PT", label: "🇵🇹 PT" },
+  ];
+
+  const deviseOptions = [
+    { code: "XOF", label: "F CFA" },
+    { code: "EUR", label: "EUR (€)" },
+    { code: "USD", label: "USD ($)" },
+  ];
 
   return (
     <header className="sticky top-0 z-40 bg-[#FAF7F5]/95 backdrop-blur-md border-b border-[#E88D9E]/15 py-3 transition-all">
@@ -33,7 +50,7 @@ export default function Header({ onOpenCart }: HeaderProps) {
           {/* BOUTON PANIER SOBRE */}
           <button
             type="button"
-            onClick={onOpenCart}
+            onClick={onOpenCart} // 👈 On utilise la propriété passée par le parent
             className="relative p-2.5 rounded-xl bg-[#2C2224] text-white shadow-md hover:bg-[#E88D9E] transition-all duration-300 active:scale-95 shrink-0 cursor-pointer flex items-center justify-center border border-white/10"
             title="Mon Panier"
           >
@@ -58,29 +75,85 @@ export default function Header({ onOpenCart }: HeaderProps) {
           </button>
         </div>
 
-        {/* NIVEAU 2 : Les Sélecteurs FR & F CFA */}
+        {/* NIVEAU 2 : Les Sélecteurs Customisés */}
         <div className="flex items-center justify-between pt-2 border-t border-[#E88D9E]/10">
-          <select
-            value={langue}
-            onChange={(e) => setLangue(e.target.value as Langue)}
-            className="bg-white/80 border border-gray-200 text-[10px] font-mono rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#E88D9E] text-[#2C2224] cursor-pointer shadow-sm"
-          >
-            <option value="FR">🇫🇷 FR</option>
-            <option value="EN">🇬🇧 EN</option>
-          </select>
+          
+          {/* Dropdown Langue */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOpenDropdown(openDropdown === "langue" ? null : "langue")}
+              className="flex items-center gap-1.5 bg-white border border-gray-200 text-[10px] font-mono rounded-lg px-3 py-1.5 hover:border-[#E88D9E] text-[#2C2224] shadow-sm transition-colors"
+            >
+              <span>{langOptions.find((l) => l.code === langue)?.label || langue}</span>
+              <svg className={`w-3 h-3 transition-transform ${openDropdown === "langue" ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
 
-          <select
-            value={devise}
-            onChange={(e) => setDevise(e.target.value as Devise)}
-            className="bg-white/80 border border-gray-200 text-[10px] font-mono rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#E88D9E] text-[#2C2224] cursor-pointer shadow-sm"
-          >
-            <option value="XOF">F CFA</option>
-            <option value="EUR">EUR (€)</option>
-            <option value="USD">USD ($)</option>
-          </select>
+            {openDropdown === "langue" && (
+              <div className="absolute left-0 mt-1 w-24 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden py-1">
+                {langOptions.map((opt) => (
+                  <button
+                    key={opt.code}
+                    onClick={() => {
+                      setLangue(opt.code as Langue);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-[10px] font-mono transition-colors ${
+                      langue === opt.code ? "bg-[#E88D9E]/10 text-[#E88D9E] font-bold" : "text-[#2C2224] hover:bg-gray-50"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Dropdown Devise */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOpenDropdown(openDropdown === "devise" ? null : "devise")}
+              className="flex items-center gap-1.5 bg-white border border-gray-200 text-[10px] font-mono rounded-lg px-3 py-1.5 hover:border-[#E88D9E] text-[#2C2224] shadow-sm transition-colors"
+            >
+              <span>{deviseOptions.find((d) => d.code === devise)?.label || devise}</span>
+              <svg className={`w-3 h-3 transition-transform ${openDropdown === "devise" ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {openDropdown === "devise" && (
+              <div className="absolute right-0 mt-1 w-24 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden py-1">
+                {deviseOptions.map((opt) => (
+                  <button
+                    key={opt.code}
+                    onClick={() => {
+                      setDevise(opt.code as Devise);
+                      setOpenDropdown(null);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-[10px] font-mono transition-colors ${
+                      devise === opt.code ? "bg-[#E88D9E]/10 text-[#E88D9E] font-bold" : "text-[#2C2224] hover:bg-gray-50"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
         </div>
-
       </div>
+
+      {/* Clic à l'extérieur pour fermer les menus */}
+      {openDropdown && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setOpenDropdown(null)}
+        />
+      )}
     </header>
   );
 }
