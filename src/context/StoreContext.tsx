@@ -2,6 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 
+export interface Category {
+  id: string;
+  name: string;
+  visible: boolean;
+}
+
 export interface Product {
   id: string;
   brand?: string;
@@ -15,7 +21,7 @@ export interface Product {
   sizes?: string[];
   colors?: { name: string; hex: string }[];
   images?: string[];
-  image?: string; // Fallback pour affichage facile
+  image?: string;
   stock?: number;
   visible?: boolean;
   options?: { name: string; values: string[] }[];
@@ -30,6 +36,7 @@ export interface Product {
 }
 
 export interface StoreContent {
+  categories?: Category[];
   hero?: {
     badge?: string;
     title?: string;
@@ -67,11 +74,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [content, setContent] = useState<StoreContent>({});
   const [loading, setLoading] = useState(true);
 
-  // Charger Produits + Contenu depuis Neon DB
   const refreshAll = async () => {
     try {
       setLoading(true);
-
       const [resProd, resContent] = await Promise.all([
         fetch("/api/products"),
         fetch("/api/content"),
@@ -79,7 +84,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (resProd.ok) {
         const dataProd = await resProd.json();
-        // Normaliser l'image principale pour le composant vitrine
         const formatted = dataProd.map((p: any) => ({
           ...p,
           price: Number(p.price),
@@ -90,7 +94,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       if (resContent.ok) {
         const dataContent = await resContent.json();
-        if (dataContent.about || dataContent.hero) {
+        if (dataContent.about || dataContent.hero || dataContent.categories) {
           setContent(dataContent);
         }
       }
@@ -105,7 +109,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     refreshAll();
   }, []);
 
-  // Upload vers Vercel Blob
   const uploadImage = async (file: File): Promise<string> => {
     const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
       method: "POST",
@@ -113,10 +116,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
     if (!res.ok) throw new Error("Échec upload d'image");
     const blob = await res.json();
-    return blob.url; // URL Vercel Blob CDN
+    return blob.url;
   };
 
-  // Actions CRUD Produits sur Neon DB
   const addProduct = async (newProd: Partial<Product>) => {
     const res = await fetch("/api/products", {
       method: "POST",
@@ -142,7 +144,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (res.ok) await refreshAll();
   };
 
-  // Action Sauvegarde Contenu sur Neon DB
   const saveContent = async (newContent: StoreContent) => {
     const res = await fetch("/api/content", {
       method: "POST",
