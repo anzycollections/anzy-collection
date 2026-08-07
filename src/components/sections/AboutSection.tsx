@@ -6,7 +6,8 @@ export default function AboutSection() {
   const { content } = useStore();
   const about = content?.about || {};
 
-  const mainImage = about.image || "/images/about-main.jpg";
+  // On enlève le faux lien qui cassait le design
+  const mainImage = about.image || ""; 
   const subtitle = about.subtitle || "SAVOIR-FAIRE & ÉLÉGANCE";
   const title = about.title || "L'UNIVERS ANZY COLLECTION";
   const founderName = about.founderName || "Mme Meryem B. GBOSSA";
@@ -18,18 +19,33 @@ export default function AboutSection() {
     about.description ||
     "Fondée par une jeune entrepreneure africaine passionnée, Anzy Collection est née de la volonté de proposer des soins d'exception, sans additifs ni produits chimiques, façonnés pour sublimer le corps avec patience et discipline.";
 
+  // Petite fonction pour extraire les initiales proprement
+  const getInitials = (name: string) => {
+    const cleanName = name.replace(/Mme |M\. /g, "").trim();
+    const parts = cleanName.split(" ");
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return cleanName ? cleanName.charAt(0).toUpperCase() : "";
+  };
+
   return (
     <section className="pt-2 pb-2 text-[#2C2224] overflow-hidden">
       <div className="max-w-2xl mx-auto px-4 text-center space-y-4">
         
         {/* PETIT CERCLE AVATAR */}
         <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-full p-1 bg-gradient-to-tr from-[#E88D9E] to-pink-100 shadow-md">
-          <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-white">
-            <img
-              src={mainImage}
-              alt={founderName}
-              className="w-full h-full object-cover"
-            />
+          {/* On ajoute bg-gray-100 et flex/center pour le mode "vide" */}
+          <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-50 flex items-center justify-center">
+            {mainImage ? (
+              <img
+                src={mainImage}
+                alt={founderName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-gray-300 font-serif text-3xl font-light">
+                {getInitials(founderName)}
+              </span>
+            )}
           </div>
         </div>
 

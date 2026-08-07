@@ -75,13 +75,39 @@ export default function AboutTab({ content, saveContent }: { content: any; saveC
         <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-1">Description</label>
         <textarea value={aboutForm.description} onChange={(e) => setAboutForm({ ...aboutForm, description: e.target.value })} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs h-20 focus:border-[#E88D9E] focus:outline-none resize-none" />
       </div>
+      
+      {/* NOUVELLE ZONE D'IMAGE AVEC BOUTON SUPPRIMER */}
       <div>
         <label className="text-[10px] font-mono uppercase tracking-wider text-gray-400 font-bold block mb-2">Visuel officiel</label>
         <input type="file" accept="image/*" ref={aboutFileRef} onChange={handleAboutImage} className="hidden" />
-        <div onClick={() => aboutFileRef.current?.click()} className="w-full h-36 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#E88D9E] bg-[#FAF7F5] transition">
-          {aboutForm.image ? <img src={aboutForm.image} alt="About" className="max-h-full rounded-xl" /> : <span className="text-xs font-mono uppercase text-gray-400">Importer l'image</span>}
+        
+        <div className="relative w-full h-36">
+          <div onClick={() => aboutFileRef.current?.click()} className="w-full h-full rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-[#E88D9E] bg-[#FAF7F5] transition overflow-hidden">
+            {aboutForm.image ? (
+              <img src={aboutForm.image} alt="About" className="max-h-full rounded-xl" />
+            ) : (
+              <span className="text-xs font-mono uppercase text-gray-400">Importer l'image</span>
+            )}
+          </div>
+          
+          {/* LE BOUTON DE SUPPRESSION */}
+          {aboutForm.image && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setAboutForm({ ...aboutForm, image: "" });
+                if (aboutFileRef.current) aboutFileRef.current.value = "";
+              }}
+              className="absolute top-2 right-2 w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md hover:bg-red-700 transition cursor-pointer z-10 font-bold text-xs"
+              title="Supprimer l'image"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
+
       <button
         onClick={saveAbout}
         className={`w-full py-4 rounded-2xl text-[11px] font-mono font-bold uppercase tracking-widest transition-all duration-300 shadow-md cursor-pointer ${
