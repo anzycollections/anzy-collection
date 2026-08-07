@@ -1,27 +1,32 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useCheckout } from "@/hooks/useCheckout";
 import CustomerInfo from "@/components/checkout/CustomerInfo";
 import PaymentSection from "@/components/checkout/PaymentSection";
 import OrderSummary from "@/components/checkout/OrderSummary";
+import OrderSuccessModal from "@/components/checkout/OrderSuccessModal";
+import { useRouter } from "next/navigation";
 import { useCartUI } from "@/context/CartUIContext";
 
 export default function CheckoutPage() {
-  const { closeCart } = useCartUI();
+  const router = useRouter();
+  const { openCart, closeCart } = useCartUI(); // <--- Corrigé ici : openCart ajouté
   const checkout = useCheckout();
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     closeCart();
-  }, []);
+  }, [closeCart]);
 
-  if (checkout.items.length === 0) {
+  if (checkout.items.length === 0 && !showSuccessModal) {
     return (
       <div className="min-h-screen bg-[#FAF7F5] flex items-center justify-center">
         <div className="text-center space-y-4 p-8">
-          <h1 className="text-2xl font-serif font-bold">Votre panier est vide</h1>
-          <p className="text-gray-500">Ajoutez des produits pour continuer.</p>
-          <a href="/" className="inline-block bg-[#E88D9E] text-white px-8 py-3 rounded-full text-xs font-bold uppercase">Retour a la boutique</a>
+          <h1 className="text-2xl font-serif font-bold text-[#2C2224]">Votre panier est vide</h1>
+          <p className="text-gray-500 text-xs font-mono">Ajoutez des pièces pour continuer.</p>
+          <a href="/" className="inline-block bg-[#2C2224] text-white px-8 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest hover:bg-[#E88D9E] transition">Retour à la boutique</a>
         </div>
       </div>
     );
@@ -30,19 +35,44 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkout.isFormValid()) {
-      alert("Veuillez remplir tous les champs obligatoires.");
+      alert("Veuillez remplir tous les champs obligatoires et fournir le justificatif.");
       return;
     }
     checkout.setSubmitting(true);
+    
     setTimeout(() => {
-      alert("Commande enregistrée ! Nous vous contacterons rapidement.");
       checkout.setSubmitting(false);
+      setShowSuccessModal(true);
     }, 1500);
   };
 
+  const handleBackToCart = () => {
+    router.push("/");
+    openCart();
+  };
+
   return (
-    <div className="min-h-screen bg-[#FAF7F5] font-sans text-[#2C2224] py-12 px-4 sm:px-8">
-      <main className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#FAF7F5] font-sans text-[#2C2224] py-10 px-4 sm:px-8 relative">
+      
+      <OrderSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.push("/");
+        }}
+      />
+
+      <main className="max-w-6xl mx-auto space-y-6">
+        <div>
+          <button
+            type="button"
+            onClick={handleBackToCart}
+            className="text-[11px] font-mono text-gray-400 hover:text-[#E88D9E] transition tracking-wider flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>←</span> Retour à la boutique
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-7 space-y-8">
             <CustomerInfo
