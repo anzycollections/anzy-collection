@@ -62,13 +62,13 @@ export default function ProductCard({
         onClick={() => onSelect(product)}
         className="group glass-card glass-card-hover rounded-2xl p-3 cursor-pointer flex items-center gap-4 relative text-[#2C2224]"
       >
-        <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center overflow-hidden rounded-xl bg-white/40 backdrop-blur-md border border-white/60">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 flex items-center justify-center overflow-hidden rounded-xl bg-white/40 backdrop-blur-md border border-white/60">
           {mainImage ? (
             <img
-              key={mainImage} // 👈 Force le rechargement quand l'URL change
               src={mainImage}
               alt={product.name}
-              className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500 ease-out p-1.5"
+              // Les classes importantes ici : object-contain assure que l'image s'adapte sans être coupée
+              className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500 ease-out p-1.5"
             />
           ) : (
             <span className="text-2xl text-gray-300">📷</span>
@@ -152,13 +152,14 @@ export default function ProductCard({
         </span>
       </div>
 
+      {/* Le conteneur d'image a une hauteur fixe h-64 sm:h-72 */}
       <div className="h-64 sm:h-72 w-full flex items-center justify-center my-3 overflow-hidden rounded-2xl bg-white/40 backdrop-blur-md border border-white/60">
         {mainImage ? (
           <img
-            key={mainImage} // 👈 Force le rechargement quand l'URL change
             src={mainImage}
             alt={product.name}
-            className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500 ease-out p-2"
+            // w-full h-full object-contain force l'image à se redimensionner proportionnellement pour rentrer dans le conteneur, sans déformer ni rogner.
+            className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500 ease-out p-2"
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-gray-300 space-y-2">

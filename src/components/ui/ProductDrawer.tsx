@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Product, useStore } from "@/context/StoreContext";
 import { useCart } from "@/context/CartContext";
 import ProductDescription from "./ProductDescription";
-import VariantSelector from "./VariantSelector";
 import { getApprovedReviews, createReview } from "@/app/actions/reviews";
 
 interface ProductDrawerProps {
@@ -67,19 +66,15 @@ export default function ProductDrawer({
   }, [product.id]);
 
   // LOGIQUE DE GALERIE D'IMAGES :
-  // On regroupe l'image de la variante sélectionnée (en premier) ET toutes les autres images du produit.
-  // On utilise Set pour éviter les doublons si l'image de la variante est déjà dans product.images
   const allImages = Array.from(new Set([
     ...(selectedVariante?.image ? [selectedVariante.image] : []),
     ...(product.images || [])
   ]));
 
-  // Si aucune image n'existe, on met un placeholder
   if (allImages.length === 0) {
     allImages.push("/images/placeholder-product.jpg");
   }
 
-  // Dès qu'on change de variante, on ramène le carrousel à la première image (celle de la variante)
   useEffect(() => {
     setActiveImageIndex(0);
     const scrollContainer = document.getElementById('product-image-gallery');
@@ -92,7 +87,7 @@ export default function ProductDrawer({
 
   const getVarianteLabel = (v: any) => {
     if (!v) return "Standard";
-    let label = v.combo ? Object.values(v.combo).join(" / ") : (v.title || v.name || "Standard");
+    let label = v.combo ? Object.values(v.combo).join(" - ") : (v.title || v.name || "Standard");
     if (label.toLowerCase().includes("option 1") || label.toLowerCase().includes("default title")) {
       return "Modèle Unique";
     }
@@ -109,7 +104,7 @@ export default function ProductDrawer({
       varianteName: getVarianteLabel(selectedVariante),
       price: currentPrice,
       quantity,
-      image: allImages[0], // On met l'image principale actuelle dans le panier
+      image: allImages[0], 
     });
     onClose();
   };
@@ -148,7 +143,6 @@ export default function ProductDrawer({
 
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 pb-28">
             
-            {/* GALERIE D'IMAGES DÉFILANTE */}
             <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-2xs aspect-[4/5] max-w-[280px] mx-auto">
               <div 
                 id="product-image-gallery"
@@ -158,7 +152,7 @@ export default function ProductDrawer({
                   const newIndex = Math.round(target.scrollLeft / target.clientWidth);
                   if (newIndex !== activeImageIndex) setActiveImageIndex(newIndex);
                 }}
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }} // Cache la barre de défilement native
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }} 
               >
                 {allImages.map((img, idx) => (
                   <img 
@@ -170,7 +164,6 @@ export default function ProductDrawer({
                 ))}
               </div>
               
-              {/* Petits points de navigation (Dots) si plus d'une image */}
               {allImages.length > 1 && (
                 <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
                   {allImages.map((_, idx) => (
@@ -212,9 +205,29 @@ export default function ProductDrawer({
               </div>
             </div>
 
+            {/* --- CORRECTION INTÉGRÉE ICI : Les boutons remplacent le VariantSelector --- */}
             {hasRealVariants && (
-              <VariantSelector variantes={variantes} selectedVariante={selectedVariante} onSelectVariante={setSelectedVariante} />
+              <div className="space-y-3">
+                <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">TAILLE / OPTION</span>
+                <div className="flex flex-wrap gap-2">
+                  {variantes.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setSelectedVariante(v)}
+                      className={`px-4 py-2 text-xs font-mono rounded-xl border transition-all cursor-pointer ${
+                        selectedVariante?.id === v.id
+                          ? "bg-[#2C2224] text-white border-[#2C2224] shadow-md"
+                          : "bg-white text-gray-500 border-gray-200 hover:border-[#E88D9E] hover:text-[#2C2224]"
+                      }`}
+                    >
+                      {getVarianteLabel(v)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
+            {/* -------------------------------------------------------------------------- */}
 
             <div className="space-y-1.5">
               <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">QUANTITÉ</span>
