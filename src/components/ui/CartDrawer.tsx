@@ -30,9 +30,6 @@ export default function CartDrawer() {
 
   const handleCheckout = () => {
     if (items.length === 0) return;
-    // On ne ferme PAS le panier ici : on lance la navigation, et c'est la
-    // page checkout elle-même qui refermera le panier une fois montée.
-    // Cela évite le flash de la page d'accueil pendant le chargement.
     router.push("/checkout");
   };
 

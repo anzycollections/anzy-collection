@@ -1,196 +1,115 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useCart } from "@/context/CartContext";
-import { useStore } from "@/context/StoreContext";
-import { useCartUI } from "@/context/CartUIContext";
+import { useEffect } from "react";
+import { useCheckout } from "@/hooks/useCheckout";
+import CustomerInfo from "@/components/checkout/CustomerInfo";
+import PaymentSection from "@/components/checkout/PaymentSection";
+import OrderSummary from "@/components/checkout/OrderSummary";
 import { useRouter } from "next/navigation";
+import { useCartUI } from "@/context/CartUIContext";
 
 export default function CheckoutPage() {
-  const { items, subtotal, total, country, selectedShipping, isLoaded } = useCart();
-  const { convertirPrix, symboleDevise } = useStore();
-  const { openCart, closeCart } = useCartUI();
   const router = useRouter();
+  const { openCart, closeCart } = useCartUI();
+  const checkout = useCheckout();
 
-  const [formData, setFormData] = useState({
-    name: "", email: "", phone: "", address: "", city: ""
-  });
-  const [paymentMethod, setPaymentMethod] = useState("mobile_money");
-  const [operator, setOperator] = useState("MTN Money");
-  const [reference, setReference] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [receiptUrl, setReceiptUrl] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  // Une fois la page checkout montée, on referme le panier (qui était resté
-  // ouvert pendant la transition pour éviter le flash de la page d'accueil).
   useEffect(() => {
     closeCart();
   }, []);
 
-  // Attendre que le panier soit relu depuis localStorage avant de décider quoi que ce soit
-  if (!isLoaded) {
-    return null;
+  if (checkout.items.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F5] flex items-center justify-center">
+        <div className="text-center space-y-4 p-8">
+          <h1 className="text-2xl font-serif font-bold">Votre panier est vide</h1>
+          <p className="text-gray-500">Ajoutez des produits pour continuer.</p>
+          <a href="/" className="inline-block bg-[#E88D9E] text-white px-8 py-3 rounded-full text-xs font-bold uppercase">Retour a la boutique</a>
+        </div>
+      </div>
+    );
   }
-
-  // Redirection seulement une fois qu'on est sûr que le panier est vraiment vide
-  if (items.length === 0) {
-    if (typeof window !== "undefined") router.push("/");
-    return null;
-  }
-
-  const handleBackToCart = () => {
-    openCart();
-    router.push("/");
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUploading(true);
-    setTimeout(() => {
-      setReceiptUrl("mock_url_for_now");
-      setUploading(false);
-    }, 1500);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
+    if (!checkout.isFormValid()) {
+      alert("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+    checkout.setSubmitting(true);
+    // Simulation d'envoi
     setTimeout(() => {
-      alert("Commande validée ! Nous allons créer l'API pour enregistrer ça.");
-      setSubmitting(false);
-    }, 1000);
+      alert("Commande enregistrée ! Nous vous contacterons rapidement.");
+      checkout.setSubmitting(false);
+    }, 1500);
+  };
+
+  const handleBackToCart = () => {
+    router.push("/");
+    openCart();
   };
 
   return (
     <div className="min-h-screen bg-[#FAF7F5] font-sans text-[#2C2224]">
-      <header className="bg-white border-b border-[#E88D9E]/15 py-5 px-6 md:px-12 flex items-center justify-between sticky top-0 z-50">
+      <header className="bg-white border-b border-[#E88D9E]/15 py-4 px-6 flex items-center justify-between sticky top-0 z-50">
         <button
           type="button"
           onClick={handleBackToCart}
-          className="text-xs font-mono font-bold text-gray-500 hover:text-[#E88D9E] transition-colors flex items-center gap-2 uppercase tracking-wider cursor-pointer"
+          className="text-xs font-mono font-bold text-gray-500 hover:text-[#E88D9E] uppercase tracking-wider"
         >
-          <span>←</span> Retour au panier
+          Retour au panier
         </button>
-        <div className="absolute left-1/2 -translate-x-1/2 text-center hidden sm:block">
+        <div className="text-center">
           <h1 className="text-lg font-serif font-bold tracking-[0.2em] uppercase">ANZY COLLECTION</h1>
-          <span className="text-[7px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase">Paiement Sécurisé</span>
+          <span className="text-[7px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase">Paiement Securise</span>
         </div>
         <div className="w-20" />
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-
-          <div className="lg:col-span-7 space-y-10">
-
-            <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
-              <h2 className="font-serif font-bold text-lg mb-6 border-b border-gray-100 pb-4">1. Vos Coordonnées</h2>
-              <div className="space-y-4">
-                <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Nom et Prénom" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Adresse e-mail" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Téléphone / WhatsApp" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
-                </div>
-                <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Adresse de livraison complète" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input type="text" name="city" value={formData.city} onChange={handleChange} placeholder="Ville" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
-                  <input type="text" value={country} disabled className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-gray-50 text-gray-500 cursor-not-allowed" />
-                </div>
-              </div>
-            </section>
-
-            <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
-              <h2 className="font-serif font-bold text-lg mb-6 border-b border-gray-100 pb-4">2. Paiement & Reçu</h2>
-
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <button type="button" onClick={() => setPaymentMethod("mobile_money")} className={`py-3 text-xs font-mono font-bold rounded-xl border transition-all ${paymentMethod === "mobile_money" ? "bg-[#2C2224] text-white border-[#2C2224]" : "bg-white text-gray-500 border-gray-200 hover:border-[#E88D9E]"}`}>
-                  MOBILE MONEY
-                </button>
-                <button type="button" onClick={() => setPaymentMethod("transfer")} className={`py-3 text-xs font-mono font-bold rounded-xl border transition-all ${paymentMethod === "transfer" ? "bg-[#2C2224] text-white border-[#2C2224]" : "bg-white text-gray-500 border-gray-200 hover:border-[#E88D9E]"}`}>
-                  TRANSFERT
-                </button>
-              </div>
-
-              <div className="space-y-5">
-                <select value={operator} onChange={e => setOperator(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:border-[#E88D9E] outline-none">
-                  {paymentMethod === "mobile_money" ? (
-                    <>
-                      <option value="MTN Money">MTN Money (Bénin / CI)</option>
-                      <option value="Moov Money">Moov Money</option>
-                      <option value="Orange Money">Orange Money</option>
-                      <option value="Wave">Wave</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="MoneyGram">MoneyGram</option>
-                      <option value="Ria">Ria</option>
-                      <option value="Western Union">Western Union</option>
-                    </>
-                  )}
-                </select>
-
-                <div className="bg-[#FAF7F5] p-4 rounded-xl border border-gray-200 text-sm text-gray-600">
-                  <p>Veuillez effectuer le paiement de <strong className="text-[#E88D9E]">{convertirPrix(total)} {symboleDevise}</strong> sur notre compte <strong>{operator}</strong>.</p>
-                  <p className="mt-2 text-xs font-mono">Numéro / Info : (+229) 00 00 00 00</p>
-                </div>
-
-                <input type="text" name="reference" value={reference} onChange={e => setReference(e.target.value)} placeholder="Référence de transaction (ID SMS, MTCN...)" required className="w-full p-3.5 rounded-xl border border-gray-200 text-sm font-mono focus:border-[#E88D9E] outline-none" />
-
-                <div className="pt-2 border-t border-gray-100">
-                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-widest mb-3">Photo du reçu / Capture d'écran</label>
-                  <input type="file" required accept="image/*" onChange={handleFileUpload} className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#E88D9E]/10 file:text-[#E88D9E] hover:file:bg-[#E88D9E]/20 transition-all cursor-pointer" />
-                  {uploading && <p className="text-[10px] text-[#E88D9E] font-mono mt-2">Chargement de l'image...</p>}
-                </div>
-              </div>
-            </section>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-7 space-y-8">
+            <CustomerInfo
+              formData={checkout.formData}
+              handleInputChange={checkout.handleInputChange}
+              isOther={checkout.isOther}
+              countryName={checkout.countryName}
+              customCountryName={checkout.customCountryName}
+              setCustomCountryName={checkout.setCustomCountryName}
+              localShippingOptions={checkout.localShippingOptions}
+              localSelectedShipping={checkout.localSelectedShipping}
+              setLocalSelectedShipping={checkout.setLocalSelectedShipping}
+              effectiveShipping={checkout.effectiveShipping}
+              selectedShipping={checkout.selectedShipping}
+            />
+            <PaymentSection
+              paymentMethod={checkout.paymentMethod}
+              setPaymentMethod={checkout.setPaymentMethod}
+              transferService={checkout.transferService}
+              setTransferService={checkout.setTransferService}
+              mtcnCode={checkout.mtcnCode}
+              setMtcnCode={checkout.setMtcnCode}
+              mtcnError={checkout.mtcnError}
+              receiptFile={checkout.receiptFile}
+              receiptPreview={checkout.receiptPreview}
+              handleFileChange={checkout.handleFileChange}
+              setReceiptFile={checkout.setReceiptFile}
+              setReceiptPreview={checkout.setReceiptPreview}
+            />
           </div>
 
           <div className="lg:col-span-5">
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-lg shadow-[#E88D9E]/5 border border-[#E88D9E]/20 sticky top-24">
-              <h2 className="font-serif font-bold text-lg mb-6">Résumé de la commande</h2>
-
-              <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2">
-                {items.map((item, idx) => (
-                  <div key={idx} className="flex gap-4 items-center">
-                    <div className="relative">
-                      <img src={item.image} alt={item.productName} className="w-16 h-16 object-cover rounded-xl border border-gray-100" />
-                      <span className="absolute -top-2 -right-2 bg-[#2C2224] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">{item.quantity}</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-bold">{item.productName}</p>
-                      {item.varianteName && <p className="text-[10px] text-gray-500">{item.varianteName}</p>}
-                    </div>
-                    <p className="text-sm font-mono font-bold">{convertirPrix(item.price * item.quantity)} {symboleDevise}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-gray-100 pt-4 space-y-3 text-sm">
-                <div className="flex justify-between text-gray-600">
-                  <span>Sous-total articles</span>
-                  <span className="font-mono">{convertirPrix(subtotal)} {symboleDevise}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Livraison ({country})</span>
-                  <span className="font-mono">{convertirPrix(total - subtotal)} {symboleDevise}</span>
-                </div>
-              </div>
-
-              <div className="border-t border-[#E88D9E]/30 mt-4 pt-4 flex justify-between items-center">
-                <span className="font-bold text-base uppercase tracking-wider">Total</span>
-                <span className="text-xl font-mono font-bold text-[#E88D9E]">{convertirPrix(total)} {symboleDevise}</span>
-              </div>
-
-              <button type="submit" disabled={submitting} className="w-full mt-8 bg-[#2C2224] text-white py-4 rounded-2xl text-xs font-mono font-bold uppercase tracking-widest shadow-xl hover:bg-[#E88D9E] transition-all disabled:opacity-50">
-                {submitting ? "Validation en cours..." : "CONFIRMER ET PAYER"}
-              </button>
-            </div>
+            <OrderSummary
+              items={checkout.items}
+              subtotal={checkout.subtotal}
+              shippingCost={checkout.shippingCost}
+              total={checkout.total}
+              isFormValid={checkout.isFormValid}
+              submitting={checkout.submitting}
+              convertirPrix={checkout.convertirPrix}
+              symboleDevise={checkout.symboleDevise}
+              onSubmit={handleSubmit}
+            />
           </div>
-
         </form>
       </main>
     </div>
