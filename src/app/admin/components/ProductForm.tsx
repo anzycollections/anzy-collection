@@ -33,6 +33,7 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
 
   const [optionDefaults, setOptionDefaults] = useState<Record<string, number>>({});
   const [uploadingMain, setUploadingMain] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editingProduct) {
@@ -42,7 +43,7 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
         category: editingProduct.category || editingProduct.categoryId || "gaines",
         badge: editingProduct.badge || "Nouveauté",
         description: editingProduct.description || "",
-        price: Number(editingProduct.price) || 0, // 👈 Transtypage en number pour TypeScript
+        price: Number(editingProduct.price) || 0,
         currency: editingProduct.currency || "XOF",
         material: editingProduct.material || "",
         sizes: (editingProduct.sizes || []).join(", "),
@@ -81,16 +82,35 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
     }
   }, [form.variantes]);
 
-  const handleMainImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const handleMainImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
     setUploadingMain(true);
-    const r = new FileReader();
-    r.onloadend = () => {
-      setForm((prev) => ({ ...prev, images: [r.result as string, ...prev.images.slice(1)] }));
-      setUploadingMain(false);
-    };
-    r.readAsDataURL(f);
+
+    const newImagesUrls = await Promise.all(
+      files.map((file) => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      })
+    );
+
+    setForm((prev) => ({ 
+      ...prev, 
+      images: [...prev.images, ...newImagesUrls] 
+    }));
+    
+    setUploadingMain(false);
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, idx) => idx !== indexToRemove),
+    }));
   };
 
   const handleVarianteImage = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,41 +123,18 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
     r.readAsDataURL(f);
   };
 
-  const addOption = (name: string) => {
-    setForm((prev) => ({
-      ...prev,
-      options: [...prev.options, { name, values: [] }],
-    }));
-  };
-
-  const removeOption = (idx: number) => {
-    setForm((prev) => ({ ...prev, options: prev.options.filter((_, i) => i !== idx) }));
-  };
-
+  const addOption = (name: string) => { setForm((prev) => ({ ...prev, options: [...prev.options, { name, values: [] }] })); };
+  const removeOption = (idx: number) => { setForm((prev) => ({ ...prev, options: prev.options.filter((_, i) => i !== idx) })); };
   const addValue = (optIdx: number, val: string) => {
     const opts = [...form.options];
-    if (!opts[optIdx].values.includes(val)) {
-      opts[optIdx].values.push(val);
-      setForm((prev) => ({ ...prev, options: opts }));
-    }
+    if (!opts[optIdx].values.includes(val)) { opts[optIdx].values.push(val); setForm((prev) => ({ ...prev, options: opts })); }
   };
-
   const removeValue = (optIdx: number, valIdx: number) => {
-    const opts = [...form.options];
-    opts[optIdx].values.splice(valIdx, 1);
-    setForm((prev) => ({ ...prev, options: opts }));
+    const opts = [...form.options]; opts[optIdx].values.splice(valIdx, 1); setForm((prev) => ({ ...prev, options: opts }));
   };
 
-  const setOptionDefaultValue = (
-    optName: string,
-    val: string,
-    field: "price" | "stock",
-    amount: number
-  ) => {
-    setOptionDefaults((prev) => ({
-      ...prev,
-      [`${optName}-${val}-${field}`]: amount,
-    }));
+  const setOptionDefaultValue = (optName: string, val: string, field: "price" | "stock", amount: number) => {
+    setOptionDefaults((prev) => ({ ...prev, [`${optName}-${val}-${field}`]: amount }));
   };
 
   const generateVariantes = (e?: React.MouseEvent) => {
@@ -170,9 +167,7 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
         });
         return;
       }
-      form.options[idx].values.forEach((v) =>
-        recurse(idx + 1, { ...current, [form.options[idx].name]: v })
-      );
+      form.options[idx].values.forEach((v) => recurse(idx + 1, { ...current, [form.options[idx].name]: v }));
     };
 
     recurse(0, {});
@@ -180,52 +175,89 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
   };
 
   const updateVariante = (id: string, field: string, value: any) => {
-    setForm((prev) => ({
-      ...prev,
-      variantes: prev.variantes.map((v) => (v.id === id ? { ...v, [field]: value } : v)),
-    }));
+    setForm((prev) => ({ ...prev, variantes: prev.variantes.map((v) => (v.id === id ? { ...v, [field]: value } : v)) }));
   };
 
   const deleteVariante = (id: string) => {
-    setForm((prev) => ({
-      ...prev,
-      variantes: prev.variantes.filter((v) => v.id !== id),
-    }));
+    setForm((prev) => ({ ...prev, variantes: prev.variantes.filter((v) => v.id !== id) }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const product: Product = {
-      id: editingProduct?.id || "p" + Date.now(),
-      brand: form.brand,
-      name: form.name,
-      category: form.category,
-      categoryId: form.category,
-      badge: form.badge,
-      description: form.description,
-      price: Number(form.price),
-      currency: form.currency,
-      material: form.material,
-      sizes: form.sizes
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      colors: [],
-      images: form.images,
-      stock: Number(form.stock),
-      visible: form.visible,
-      options: form.options,
-      variantes: form.variantes,
-    };
+  // Upload automatique vers Vercel Blob si c'est un Base64
+  const uploadIfBase64 = async (imgUrl: string) => {
+    if (!imgUrl || !imgUrl.startsWith("data:image")) return imgUrl; 
+    
+    const response = await fetch(imgUrl);
+    const blob = await response.blob();
+    const ext = blob.type === "image/gif" ? "gif" : "png";
+    const filename = `produit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${ext}`;
 
-    onSave(product);
+    const uploadRes = await fetch(`/api/upload?filename=${filename}`, {
+      method: "POST",
+      body: blob,
+    });
+
+    if (!uploadRes.ok) throw new Error("Échec de l'upload de l'image");
+    
+    const data = await uploadRes.json();
+    return data.url;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const finalImages = await Promise.all(form.images.map(uploadIfBase64));
+
+      const finalVariantes = await Promise.all(
+        form.variantes.map(async (v) => ({
+          ...v,
+          image: await uploadIfBase64(v.image),
+        }))
+      );
+
+      const product: Product = {
+        id: editingProduct?.id || "p" + Date.now(),
+        brand: form.brand,
+        name: form.name,
+        category: form.category,
+        categoryId: form.category,
+        badge: form.badge,
+        description: form.description,
+        price: Number(form.price),
+        currency: form.currency,
+        material: form.material,
+        sizes: form.sizes.split(",").map((s) => s.trim()).filter(Boolean),
+        colors: [],
+        images: finalImages,      
+        stock: Number(form.stock),
+        visible: form.visible,
+        options: form.options,
+        variantes: finalVariantes,
+      };
+
+      await onSave(product);
+
+    } catch (error) {
+      console.error("Erreur d'upload :", error);
+      alert("Erreur lors de l'envoi des photos. Veuillez réessayer.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-3xl p-4 sm:p-8 border border-gray-100 shadow-xl space-y-6 text-[#2C2224] max-w-full overflow-hidden"
+      className="bg-white rounded-3xl p-4 sm:p-8 border border-gray-100 shadow-xl space-y-6 text-[#2C2224] max-w-full overflow-hidden relative"
     >
+      {isSubmitting && (
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-3xl">
+          <div className="w-10 h-10 border-4 border-[#E88D9E] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#2C2224]">Upload des images...</p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between border-b border-gray-100 pb-4">
         <div>
           <span className="text-[9px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold block">
@@ -254,16 +286,15 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
         </div>
       </div>
 
-      {/* 1. INFORMATIONS GÉNÉRALES */}
       <FormMainInfo
         form={form}
         setForm={setForm}
         categories={content?.categories || []}
         uploadingMain={uploadingMain}
         handleMainImage={handleMainImage}
+        handleRemoveImage={handleRemoveImage}
       />
 
-      {/* 2. ÉTAPE 1 : CRÉATION ET TARIFICATION DES CRITÈRES */}
       <FormOptionsBuilder
         options={form.options}
         optionDefaults={optionDefaults}
@@ -275,7 +306,6 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
         generateVariantes={generateVariantes}
       />
 
-      {/* 3. ÉTAPE 2 : GESTION DES DÉCLINAISONS & BULK CIBLÉ */}
       <FormVariantesManager
         variantes={form.variantes}
         options={form.options}
@@ -287,9 +317,10 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
 
       <button
         type="submit"
-        className="w-full bg-[#2C2224] hover:bg-[#E88D9E] text-white py-3.5 rounded-2xl text-xs font-mono uppercase tracking-[0.2em] font-bold shadow-xl transition-all duration-300 cursor-pointer active:scale-98"
+        disabled={isSubmitting}
+        className="w-full bg-[#2C2224] hover:bg-[#E88D9E] disabled:bg-gray-400 text-white py-3.5 rounded-2xl text-xs font-mono uppercase tracking-[0.2em] font-bold shadow-xl transition-all duration-300 cursor-pointer active:scale-98"
       >
-        {editingProduct ? "💾 ENREGISTRER LES MODIFICATIONS" : "✨ PUBLIER LA NOUVELLE CRÉATION"}
+        {isSubmitting ? "TRAITEMENT EN COURS..." : editingProduct ? "💾 ENREGISTRER LES MODIFICATIONS" : "✨ PUBLIER LA NOUVELLE CRÉATION"}
       </button>
     </form>
   );

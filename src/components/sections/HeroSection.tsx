@@ -1,10 +1,26 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useStore } from "@/context/StoreContext";
 
 export default function HeroSection() {
   const { content } = useStore();
   const hero = content?.hero || {};
+  
+  // État pour suivre l'index de l'image actuellement affichée
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Effet pour faire défiler les images automatiquement toutes les 2 secondes
+  useEffect(() => {
+    if (!hero.images || hero.images.length <= 1) return; // Pas besoin de timer s'il y a 0 ou 1 image
+
+    const intervalId = setInterval(() => {
+      // Ajout de ?.length et || 1 pour satisfaire TypeScript dans la closure
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % (hero.images?.length || 1));
+    }, 2000); // Temps d'affichage par image modifié ici (2000ms = 2 secondes)
+
+    return () => clearInterval(intervalId); // Nettoyage lors du démontage du composant
+  }, [hero.images]);
 
   return (
     <section className="relative w-full bg-[#FAF7F5] px-4 py-6">
@@ -12,14 +28,27 @@ export default function HeroSection() {
         {/* h-[520px] verrouillé, justify-between sépare le haut et le bas */}
         <div className="relative w-full h-[520px] rounded-3xl overflow-hidden shadow-xl flex flex-col justify-between p-8 text-center">
           
-          {hero.images?.[0] ? (
-            <img src={hero.images[0]} alt="Hero" className="absolute inset-0 w-full h-full object-cover" />
+          {/* GESTION DU CARROUSEL AVEC FONDU */}
+          {hero.images && hero.images.length > 0 ? (
+            // Ajout du chaînage optionnel (?.) pour rassurer TypeScript
+            hero.images?.map((imgUrl, index) => (
+              <img 
+                key={index}
+                src={imgUrl} 
+                alt={`Hero ${index}`} 
+                // La transition gère le fondu. L'opacité est à 100 si c'est la bonne image, 0 sinon.
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+                  index === currentImageIndex ? "opacity-100" : "opacity-0"
+                }`} 
+              />
+            ))
           ) : (
             <div className="absolute inset-0 bg-[#E88D9E]/10" />
           )}
+
           <div className="absolute inset-0 bg-black/35" />
           
-          {/* Bloc du HAUT (Ce que tu as entouré en rouge) */}
+          {/* Bloc du HAUT */}
           <div className="relative z-10 space-y-4 pt-4">
             <span className="inline-block text-[10px] font-mono tracking-[0.3em] uppercase bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 text-white">
               {hero.badge || "NOUVELLE SAISON 2026"}
@@ -29,7 +58,7 @@ export default function HeroSection() {
             </h1>
           </div>
 
-          {/* Bloc du BAS (Ce que tu as entouré en vert) */}
+          {/* Bloc du BAS */}
           <div className="relative z-10 pb-4 space-y-4">
             <p className="text-xs sm:text-sm text-gray-200">
               {hero.subtitle || "Découvrez notre collection exclusive."}

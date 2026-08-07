@@ -65,6 +65,7 @@ export default function ProductCard({
         <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 flex items-center justify-center overflow-hidden rounded-xl bg-white/40 backdrop-blur-md border border-white/60">
           {mainImage ? (
             <img
+              key={mainImage} // 👈 Force le rechargement quand l'URL change
               src={mainImage}
               alt={product.name}
               className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500 ease-out p-1.5"
@@ -133,7 +134,7 @@ export default function ProductCard({
   return (
     <div
       onClick={() => onSelect(product)}
-      className="group glass-card glass-card-hover rounded-3xl p-5 cursor-pointer flex flex-col justify-between relative text-[#2C2224]"
+      className="group glass-card glass-card-hover rounded-3xl p-5 cursor-pointer flex flex-col h-full relative text-[#2C2224]"
     >
       <button
         type="button"
@@ -154,6 +155,7 @@ export default function ProductCard({
       <div className="h-64 sm:h-72 w-full flex items-center justify-center my-3 overflow-hidden rounded-2xl bg-white/40 backdrop-blur-md border border-white/60">
         {mainImage ? (
           <img
+            key={mainImage} // 👈 Force le rechargement quand l'URL change
             src={mainImage}
             alt={product.name}
             className="max-h-full max-w-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-500 ease-out p-2"
@@ -166,13 +168,13 @@ export default function ProductCard({
         )}
       </div>
 
-      <div className="space-y-2 pt-2">
+      <div className="flex flex-col flex-1 space-y-2 pt-2">
         <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase block font-bold">
           {product.brand || "ANZY COLLECTION"}
         </span>
 
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1">
-          <h3 className="text-sm font-serif font-bold text-[#2C2224] group-hover:text-[#E88D9E] transition line-clamp-2">
+          <h3 className="text-sm font-serif font-bold text-[#2C2224] group-hover:text-[#E88D9E] transition line-clamp-2 min-h-[2.5rem] sm:min-h-0">
             {product.name}
           </h3>
           <span className="text-xs font-bold text-[#2C2224] shrink-0">
@@ -180,30 +182,26 @@ export default function ProductCard({
           </span>
         </div>
 
-        {product.description && (
-          <p className="text-[11px] text-gray-500 line-clamp-2 font-light">
-            {product.description}
-          </p>
-        )}
+        <p className="text-[11px] text-gray-500 line-clamp-2 font-light min-h-[2rem]">
+          {product.description || ""}
+        </p>
 
-        {(couleurs.length > 0 || tailles.length > 0) && (
-          <div className="space-y-1 pt-1">
-            {couleurs.length > 0 && (
-              <p className="text-[10px] font-mono text-gray-500">
-                <strong className="text-gray-700 font-semibold">Couleur:</strong>{" "}
-                {couleurs.join(", ")}
-              </p>
-            )}
-            {tailles.length > 0 && (
-              <p className="text-[10px] font-mono text-gray-500">
-                <strong className="text-gray-700 font-semibold">Taille:</strong>{" "}
-                {tailles.join(", ")}
-              </p>
-            )}
-          </div>
-        )}
+        <div className="min-h-[2.5rem] space-y-1">
+          {couleurs.length > 0 && (
+            <p className="text-[10px] font-mono text-gray-500">
+              <strong className="text-gray-700 font-semibold">Couleur:</strong>{" "}
+              {couleurs.join(", ")}
+            </p>
+          )}
+          {tailles.length > 0 && (
+            <p className="text-[10px] font-mono text-gray-500">
+              <strong className="text-gray-700 font-semibold">Taille:</strong>{" "}
+              {tailles.join(", ")}
+            </p>
+          )}
+        </div>
 
-        <div className="pt-3 border-t border-[#E88D9E]/10 flex items-center justify-between">
+        <div className="mt-auto pt-3 border-t border-[#E88D9E]/10 flex items-center justify-between">
           <span className="text-[10px] font-mono uppercase tracking-wider text-[#E88D9E] group-hover:translate-x-1 transition font-bold">
             Découvrir la pièce →
           </span>

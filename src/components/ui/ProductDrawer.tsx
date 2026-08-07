@@ -39,6 +39,7 @@ export default function ProductDrawer({
     variantes.find((v: any) => v.id === initialVarianteId) || variantes[0] || null
   );
   const [quantity, setQuantity] = useState(initialQuantity);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   // Vrais états pour les avis
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -51,7 +52,6 @@ export default function ProductDrawer({
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Charger les avis validés de ce produit au montage
   useEffect(() => {
     async function loadReviews() {
       try {
@@ -66,18 +66,40 @@ export default function ProductDrawer({
     loadReviews();
   }, [product.id]);
 
-  const mainImage = product.images && product.images.length > 0
-  ? product.images[0]
-  : "/images/placeholder-product.jpg";
-  
+  // LOGIQUE DE GALERIE D'IMAGES :
+  // On regroupe l'image de la variante sélectionnée (en premier) ET toutes les autres images du produit.
+  // On utilise Set pour éviter les doublons si l'image de la variante est déjà dans product.images
+  const allImages = Array.from(new Set([
+    ...(selectedVariante?.image ? [selectedVariante.image] : []),
+    ...(product.images || [])
+  ]));
+
+  // Si aucune image n'existe, on met un placeholder
+  if (allImages.length === 0) {
+    allImages.push("/images/placeholder-product.jpg");
+  }
+
+  // Dès qu'on change de variante, on ramène le carrousel à la première image (celle de la variante)
+  useEffect(() => {
+    setActiveImageIndex(0);
+    const scrollContainer = document.getElementById('product-image-gallery');
+    if (scrollContainer) scrollContainer.scrollTo({ left: 0, behavior: 'smooth' });
+  }, [selectedVariante]);
+
   const currentPrice = selectedVariante?.price || product.price || 0;
   const priceFormatted = convertirPrix(currentPrice * quantity).toLocaleString();
+  const currentStock = selectedVariante?.stock !== undefined ? selectedVariante.stock : product.stock;
 
   const getVarianteLabel = (v: any) => {
     if (!v) return "Standard";
-    if (v.combo) return Object.values(v.combo).join(" / ");
-    return v.name || v.title || "Option";
+    let label = v.combo ? Object.values(v.combo).join(" / ") : (v.title || v.name || "Standard");
+    if (label.toLowerCase().includes("option 1") || label.toLowerCase().includes("default title")) {
+      return "Modèle Unique";
+    }
+    return label;
   };
+
+  const hasRealVariants = variantes.length > 1 || (variantes.length === 1 && getVarianteLabel(variantes[0]) !== "Modèle Unique");
 
   const handleAddToCart = () => {
     addToCart({
@@ -87,7 +109,7 @@ export default function ProductDrawer({
       varianteName: getVarianteLabel(selectedVariante),
       price: currentPrice,
       quantity,
-      image: mainImage,
+      image: allImages[0], // On met l'image principale actuelle dans le panier
     });
     onClose();
   };
@@ -95,21 +117,12 @@ export default function ProductDrawer({
   const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAuthor.trim() || !newComment.trim()) return;
-
     setSubmitting(true);
-    const res = await createReview({
-      productId: product.id,
-      author: newAuthor,
-      rating: newRating,
-      comment: newComment,
-    });
+    const res = await createReview({ productId: product.id, author: newAuthor, rating: newRating, comment: newComment });
     setSubmitting(false);
-
     if (res.success) {
       setSuccessMessage("Merci ! Votre avis a été envoyé et est en attente de modération.");
-      setNewAuthor("");
-      setNewComment("");
-      setShowReviewForm(false);
+      setNewAuthor(""); setNewComment(""); setShowReviewForm(false);
       setTimeout(() => setSuccessMessage(""), 5000);
     } else {
       alert("Une erreur est survenue lors de l'envoi de votre avis.");
@@ -118,10 +131,7 @@ export default function ProductDrawer({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-300" onClick={onClose} />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
         <div className="w-screen max-w-sm sm:max-w-md bg-[#FAF7F5] shadow-2xl flex flex-col justify-between text-[#2C2224] animate-in slide-in-from-right duration-300 border-l border-white/60">
@@ -133,182 +143,145 @@ export default function ProductDrawer({
               </span>
               <h3 className="text-[10px] font-serif italic text-gray-400">Haute Couture</h3>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-7 h-7 rounded-full bg-white border border-gray-200/80 flex items-center justify-center text-gray-400 hover:text-[#2C2224] transition cursor-pointer shadow-2xs active:scale-95"
-            >
-              ✕
-            </button>
+            <button type="button" onClick={onClose} className="w-7 h-7 rounded-full bg-white border border-gray-200/80 flex items-center justify-center text-gray-400 hover:text-[#2C2224] transition cursor-pointer shadow-2xs active:scale-95">✕</button>
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 pb-28">
             
+            {/* GALERIE D'IMAGES DÉFILANTE */}
             <div className="relative rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-2xs aspect-[4/5] max-w-[280px] mx-auto">
-              <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
+              <div 
+                id="product-image-gallery"
+                className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                onScroll={(e) => {
+                  const target = e.target as HTMLElement;
+                  const newIndex = Math.round(target.scrollLeft / target.clientWidth);
+                  if (newIndex !== activeImageIndex) setActiveImageIndex(newIndex);
+                }}
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }} // Cache la barre de défilement native
+              >
+                {allImages.map((img, idx) => (
+                  <img 
+                    key={idx} 
+                    src={img} 
+                    alt={`${product.name} - Vue ${idx + 1}`} 
+                    className="w-full h-full object-cover shrink-0 snap-center" 
+                  />
+                ))}
+              </div>
+              
+              {/* Petits points de navigation (Dots) si plus d'une image */}
+              {allImages.length > 1 && (
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+                  {allImages.map((_, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        idx === activeImageIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5 text-center sm:text-left border-b border-[#E88D9E]/15 pb-4">
-              <h2 className="text-base font-serif font-normal text-[#2C2224] leading-snug tracking-wide">
-                {product.name}
-              </h2>
-
+              <h2 className="text-base font-serif font-normal text-[#2C2224] leading-snug tracking-wide">{product.name}</h2>
               <div className="flex items-center justify-center sm:justify-start gap-3 pt-0.5">
-                <span className="text-sm font-mono font-bold text-[#2C2224]">
-                  {convertirPrix(currentPrice).toLocaleString()} {symboleDevise}
-                </span>
-
-                <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-full border border-gray-100 text-[9px] font-mono">
-                  <span className="text-amber-400">★</span>
-                  <span className="font-semibold text-[#2C2224]">5.0</span>
-                  <span className="text-gray-400">({reviews.length})</span>
+                <span className="text-sm font-mono font-bold text-[#2C2224]">{convertirPrix(currentPrice).toLocaleString()} {symboleDevise}</span>
+                <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-full border border-gray-100 text-[9px] font-mono shadow-xs">
+                  <span className="text-amber-400">★</span><span className="font-semibold text-[#2C2224]">5.0</span><span className="text-gray-400">({reviews.length})</span>
                 </div>
+              </div>
+              <div className="flex justify-center sm:justify-start mt-3">
+                {currentStock !== undefined && currentStock <= 5 && currentStock > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-50 border border-orange-100/50 text-orange-600 text-[9px] font-mono font-bold uppercase tracking-widest shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>Plus que {currentStock} en stock
+                  </span>
+                )}
+                {(currentStock === undefined || currentStock > 5) && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-100/50 text-emerald-600 text-[9px] font-mono font-bold uppercase tracking-widest shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Disponible
+                  </span>
+                )}
+                {currentStock === 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 border border-red-100/50 text-red-600 text-[9px] font-mono font-bold uppercase tracking-widest shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>Rupture de stock
+                  </span>
+                )}
               </div>
             </div>
 
-            {variantes.length > 0 && (
-              <VariantSelector
-                variantes={variantes}
-                selectedVariante={selectedVariante}
-                onSelectVariante={setSelectedVariante}
-              />
+            {hasRealVariants && (
+              <VariantSelector variantes={variantes} selectedVariante={selectedVariante} onSelectVariante={setSelectedVariante} />
             )}
 
             <div className="space-y-1.5">
-              <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">
-                QUANTITÉ
-              </span>
+              <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">QUANTITÉ</span>
               <div className="inline-flex items-center rounded-xl bg-white border border-gray-200 p-0.5 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 font-bold text-gray-500 text-xs flex items-center justify-center transition cursor-pointer"
-                >
-                  -
-                </button>
+                <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 font-bold text-gray-500 text-xs flex items-center justify-center transition cursor-pointer">-</button>
                 <span className="w-8 text-center font-mono text-xs font-semibold text-[#2C2224]">{quantity}</span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 font-bold text-gray-500 text-xs flex items-center justify-center transition cursor-pointer"
-                >
-                  +
-                </button>
+                <button type="button" onClick={() => setQuantity(quantity + 1)} disabled={currentStock !== undefined && quantity >= currentStock} className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 font-bold text-gray-500 text-xs flex items-center justify-center transition cursor-pointer disabled:opacity-30">+</button>
               </div>
             </div>
 
             <ProductDescription description={product.description || ""} />
 
-            {/* SECTION AVIS CLIENTS DYNAMIQUE */}
             <div className="pt-4 border-t border-[#E88D9E]/15 space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium">
-                  AVIS ({reviews.length})
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowReviewForm(!showReviewForm)}
-                  className="text-[9px] font-mono text-[#E88D9E] uppercase font-semibold hover:underline cursor-pointer"
-                >
+                <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium">AVIS ({reviews.length})</span>
+                <button type="button" onClick={() => setShowReviewForm(!showReviewForm)} className="text-[9px] font-mono text-[#E88D9E] uppercase font-semibold hover:underline cursor-pointer">
                   {showReviewForm ? "Fermer" : "+ Donnez votre avis"}
                 </button>
               </div>
 
-              {successMessage && (
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] p-2.5 rounded-xl font-mono">
-                  {successMessage}
-                </div>
-              )}
+              {successMessage && <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] p-2.5 rounded-xl font-mono">{successMessage}</div>}
 
               {showReviewForm && (
                 <form onSubmit={handleAddReview} className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-2.5 shadow-2xs">
                   <div>
                     <label className="text-[8px] font-mono text-gray-400 uppercase block mb-0.5">Prénom</label>
-                    <input
-                      type="text"
-                      required
-                      value={newAuthor}
-                      onChange={(e) => setNewAuthor(e.target.value)}
-                      placeholder="Marie L."
-                      className="w-full text-[11px] bg-gray-50 border border-gray-200 rounded-md p-1.5 focus:outline-none focus:border-[#E88D9E]"
-                    />
+                    <input type="text" required value={newAuthor} onChange={(e) => setNewAuthor(e.target.value)} placeholder="Marie L." className="w-full text-[11px] bg-gray-50 border border-gray-200 rounded-md p-1.5 focus:outline-none focus:border-[#E88D9E]" />
                   </div>
-
                   <div>
                     <label className="text-[8px] font-mono text-gray-400 uppercase block mb-0.5">Note</label>
                     <div className="flex gap-1 text-sm cursor-pointer">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setNewRating(star)}
-                          className={star <= newRating ? "text-amber-400" : "text-gray-200"}
-                        >
-                          ★
-                        </button>
+                        <button key={star} type="button" onClick={() => setNewRating(star)} className={star <= newRating ? "text-amber-400" : "text-gray-200"}>★</button>
                       ))}
                     </div>
                   </div>
-
                   <div>
                     <label className="text-[8px] font-mono text-gray-400 uppercase block mb-0.5">Commentaire</label>
-                    <textarea
-                      required
-                      rows={2}
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Votre expérience..."
-                      className="w-full text-[11px] bg-gray-50 border border-gray-200 rounded-md p-1.5 focus:outline-none focus:border-[#E88D9E]"
-                    />
+                    <textarea required rows={2} value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Votre expérience..." className="w-full text-[11px] bg-gray-50 border border-gray-200 rounded-md p-1.5 focus:outline-none focus:border-[#E88D9E]" />
                   </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full py-2 bg-[#2C2224] text-white text-[9px] font-mono uppercase tracking-widest rounded-lg font-medium hover:bg-[#E88D9E] transition cursor-pointer disabled:opacity-50"
-                  >
+                  <button type="submit" disabled={submitting} className="w-full py-2 bg-[#2C2224] text-white text-[9px] font-mono uppercase tracking-widest rounded-lg font-medium hover:bg-[#E88D9E] transition cursor-pointer disabled:opacity-50">
                     {submitting ? "Publication..." : "Publier"}
                   </button>
                 </form>
               )}
 
               <div className="space-y-2">
-                {loadingReviews ? (
-                  <p className="text-[10px] text-gray-400 italic">Chargement des avis...</p>
-                ) : reviews.length === 0 ? (
-                  <p className="text-[10px] text-gray-400 italic">Soyez le premier à donner votre avis sur cet article.</p>
-                ) : (
+                {loadingReviews ? <p className="text-[10px] text-gray-400 italic">Chargement des avis...</p> : reviews.length === 0 ? <p className="text-[10px] text-gray-400 italic">Soyez le premier à donner votre avis sur cet article.</p> : (
                   reviews.map((r) => (
                     <div key={r.id} className="bg-white/80 p-2.5 rounded-xl border border-gray-100/80 space-y-0.5">
                       <div className="flex justify-between items-center text-[9px] font-mono">
                         <span className="font-semibold text-[#2C2224]">{r.author}</span>
-                        <span className="text-gray-300">
-                          {new Date(r.createdAt).toLocaleDateString("fr-FR")}
-                        </span>
+                        <span className="text-gray-300">{new Date(r.createdAt).toLocaleDateString("fr-FR")}</span>
                       </div>
-                      <div className="text-amber-400 text-[10px]">
-                        {"★".repeat(r.rating)}
-                        <span className="text-gray-200">{"★".repeat(5 - r.rating)}</span>
-                      </div>
+                      <div className="text-amber-400 text-[10px]">{"★".repeat(r.rating)}<span className="text-gray-200">{"★".repeat(5 - r.rating)}</span></div>
                       <p className="text-[10px] text-gray-500 font-sans italic">{r.comment}</p>
                     </div>
                   ))
                 )}
               </div>
             </div>
-
           </div>
 
           <div className="p-5 bg-white/95 backdrop-blur-xl border-t border-[#E88D9E]/15 sticky bottom-0 z-20 shadow-lg">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              className="w-full py-3.5 rounded-xl bg-[#2C2224] hover:bg-[#E88D9E] text-white text-[11px] font-mono font-medium uppercase tracking-[0.2em] shadow-md transition-all duration-300 flex items-center justify-between px-5 cursor-pointer active:scale-98 group"
-            >
-              <span>{initialVarianteId ? "METTRE À JOUR" : "AJOUTER AU PANIER"}</span>
-              <span className="font-mono text-[11px] text-[#E88D9E] group-hover:text-white transition-colors">
-                {priceFormatted} {symboleDevise}
-              </span>
+            <button type="button" onClick={handleAddToCart} disabled={currentStock === 0} className="w-full py-3.5 rounded-xl bg-[#2C2224] hover:bg-[#E88D9E] text-white text-[11px] font-mono font-medium uppercase tracking-[0.2em] shadow-md transition-all duration-300 flex items-center justify-between px-5 cursor-pointer active:scale-98 group disabled:opacity-50 disabled:cursor-not-allowed">
+              <span>{currentStock === 0 ? "ÉPUISÉ" : (initialVarianteId ? "METTRE À JOUR" : "AJOUTER AU PANIER")}</span>
+              <span className="font-mono text-[11px] text-[#E88D9E] group-hover:text-white transition-colors">{priceFormatted} {symboleDevise}</span>
             </button>
           </div>
 
