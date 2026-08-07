@@ -5,12 +5,10 @@ import { useCheckout } from "@/hooks/useCheckout";
 import CustomerInfo from "@/components/checkout/CustomerInfo";
 import PaymentSection from "@/components/checkout/PaymentSection";
 import OrderSummary from "@/components/checkout/OrderSummary";
-import { useRouter } from "next/navigation";
 import { useCartUI } from "@/context/CartUIContext";
 
 export default function CheckoutPage() {
-  const router = useRouter();
-  const { openCart, closeCart } = useCartUI();
+  const { closeCart } = useCartUI();
   const checkout = useCheckout();
 
   useEffect(() => {
@@ -36,36 +34,15 @@ export default function CheckoutPage() {
       return;
     }
     checkout.setSubmitting(true);
-    // Simulation d'envoi
     setTimeout(() => {
       alert("Commande enregistrée ! Nous vous contacterons rapidement.");
       checkout.setSubmitting(false);
     }, 1500);
   };
 
-  const handleBackToCart = () => {
-    router.push("/");
-    openCart();
-  };
-
   return (
-    <div className="min-h-screen bg-[#FAF7F5] font-sans text-[#2C2224]">
-      <header className="bg-white border-b border-[#E88D9E]/15 py-4 px-6 flex items-center justify-between sticky top-0 z-50">
-        <button
-          type="button"
-          onClick={handleBackToCart}
-          className="text-xs font-mono font-bold text-gray-500 hover:text-[#E88D9E] uppercase tracking-wider"
-        >
-          Retour au panier
-        </button>
-        <div className="text-center">
-          <h1 className="text-lg font-serif font-bold tracking-[0.2em] uppercase">ANZY COLLECTION</h1>
-          <span className="text-[7px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase">Paiement Securise</span>
-        </div>
-        <div className="w-20" />
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-10">
+    <div className="min-h-screen bg-[#FAF7F5] font-sans text-[#2C2224] py-12 px-4 sm:px-8">
+      <main className="max-w-6xl mx-auto">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-7 space-y-8">
             <CustomerInfo
