@@ -15,7 +15,6 @@ export default function CheckoutPage() {
   const checkout = useCheckout();
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [completedOrderData, setCompletedOrderData] = useState<any>(null);
 
   useEffect(() => {
     closeCart();
@@ -27,45 +26,71 @@ export default function CheckoutPage() {
         <div className="text-center space-y-4 p-8">
           <h1 className="text-2xl font-serif font-bold text-[#2C2224]">Votre panier est vide</h1>
           <p className="text-gray-500 text-xs font-mono">Ajoutez des pièces pour continuer.</p>
-          <a href="/" className="inline-block bg-[#2C2224] text-white px-8 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest hover:bg-[#E88D9E] transition">Retour à la boutique</a>
+          <a href="/" className="inline-block bg-[#2C2224] text-white px-8 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest hover:bg-black transition">Retour à la boutique</a>
         </div>
       </div>
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkout.isFormValid()) {
       alert("Veuillez remplir tous les champs obligatoires et fournir le justificatif.");
       return;
     }
     checkout.setSubmitting(true);
-    
-    // Sauvegarde des données pour la modale WhatsApp
-    const orderData = {
-      formData: checkout.formData,
-      countryName: checkout.countryName,
-      items: checkout.items,
-      effectiveShipping: checkout.effectiveShipping,
-      shippingCost: checkout.shippingCost,
-      subtotal: checkout.subtotal,
-      total: checkout.total,
-      paymentMethod: checkout.paymentMethod,
-      transferService: checkout.transferService,
-      mtcnCode: checkout.mtcnCode,
-    };
+
+    const WHATSAPP_NUMBER = "2290156646045";
+
+    const itemsText = checkout.items
+      .map(item => `• ${item.productName} (${item.varianteName || 'Standard'}) x${item.quantity} - ${(item.price * item.quantity).toLocaleString()} F CFA`)
+      .join("\n");
+
+    const paymentText = checkout.paymentMethod === "mobile_money"
+      ? "Paiement : Mobile Money (Reçu fourni)"
+      : `Transfert : ${checkout.transferService} (MTCN: ${checkout.mtcnCode})`;
+
+    const message = `
+NOUVELLE COMMANDE - ANZY COLLECTION
+
+CLIENTE :
+• Nom : ${checkout.formData.name}
+• Téléphone : ${checkout.formData.phone}
+• Adresse : ${checkout.formData.address}, ${checkout.formData.city} (${checkout.countryName})
+${checkout.formData.email ? `• Email : ${checkout.formData.email}` : ""}
+
+ARTICLES :
+${itemsText}
+
+LIVRAISON :
+• ${checkout.effectiveShipping?.name || "Standard"} : ${checkout.shippingCost.toLocaleString()} F CFA
+
+TOTAL : ${checkout.total.toLocaleString()} F CFA
+
+${paymentText}
+
+Statut : En attente de validation (24h)
+    `.trim();
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
     setTimeout(() => {
       checkout.setSubmitting(false);
-      setCompletedOrderData(orderData);
+      window.open(whatsappUrl, "_blank");
       setShowSuccessModal(true);
-    }, 1000);
+    }, 400);
   };
 
   const handleBackToCart = () => {
     router.push("/");
     openCart();
   };
+
+  // Normalisation des items pour garantir un ID de type string
+  const formattedItems = checkout.items.map(item => ({
+    ...item,
+    id: item.id || Math.random().toString(),
+  }));
 
   return (
     <div className="min-h-screen bg-[#FAF7F5] font-sans text-[#2C2224] py-10 px-4 sm:px-8 relative">
@@ -76,7 +101,6 @@ export default function CheckoutPage() {
           setShowSuccessModal(false);
           router.push("/");
         }}
-        checkoutData={completedOrderData}
       />
 
       <main className="max-w-6xl mx-auto space-y-6">
@@ -84,7 +108,7 @@ export default function CheckoutPage() {
           <button
             type="button"
             onClick={handleBackToCart}
-            className="text-[11px] font-mono text-gray-400 hover:text-[#E88D9E] transition tracking-wider flex items-center gap-1.5 cursor-pointer"
+            className="text-[11px] font-mono text-gray-400 hover:text-[#2C2224] transition tracking-wider flex items-center gap-1.5 cursor-pointer"
           >
             <span>←</span> Retour à la boutique
           </button>
@@ -123,7 +147,7 @@ export default function CheckoutPage() {
 
           <div className="lg:col-span-5">
             <OrderSummary
-              items={checkout.items}
+              items={formattedItems}
               subtotal={checkout.subtotal}
               shippingCost={checkout.shippingCost}
               total={checkout.total}

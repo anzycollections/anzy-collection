@@ -17,15 +17,15 @@ export default function OrderSuccessModal({ isOpen, onClose }: OrderSuccessModal
             Anzy Collection
           </p>
           <h2 className="text-xl font-serif font-normal text-[#2C2224]">
-            Commande enregistrée
+            Commande transmise
           </h2>
           <p className="text-xs text-gray-500 font-light leading-relaxed px-2">
-            Votre demande a été prise en compte avec succès. Votre panier reste accessible et votre commande est actuellement <span className="text-[#2C2224] font-medium">en attente de confirmation</span>. Notre équipe finalisera la validation sous 24 heures.
+            Votre commande a été transmise avec succès sur notre canal de traitement. Votre récapitulatif est ouvert sur WhatsApp. Notre équipe validera votre dossier sous 24 heures.
           </p>
         </div>
 
         <div className="bg-[#FAF7F5] border border-gray-200/60 rounded-xl py-3 px-4 text-[10px] font-mono uppercase tracking-widest text-[#2C2224]">
-          Statut : En attente de validation
+          Statut : En attente de confirmation
         </div>
 
         <button

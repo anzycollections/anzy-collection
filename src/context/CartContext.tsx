@@ -23,6 +23,7 @@ export interface CartContextType {
   addToCart: (item: CartItem) => void;
   removeFromCart: (productId: string, varianteId: string) => void;
   updateQuantity: (productId: string, varianteId: string, quantity: number) => void;
+  updateCartQuantity: (productId: string, varianteId: string, quantity: number) => void; // Correction : Ajout de la propriété manquante
   clearCart: () => void;
   country: string;
   setCountry: (country: string) => void;
@@ -46,7 +47,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("anzy-cart");
-    if (saved) setItems(JSON.parse(saved));
+    if (saved) {
+      try {
+        setItems(JSON.parse(saved));
+      } catch (e) {
+        console.error("Erreur de lecture du panier:", e);
+      }
+    }
     setIsLoaded(true);
   }, []);
 
@@ -98,7 +105,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const total = subtotal + shippingCost;
 
   return (
-    <CartContext.Provider value={{ items, cart: items, isLoaded, addToCart, removeFromCart, updateQuantity, clearCart, country, setCountry, shippingOptions, selectedShipping, setSelectedShipping, subtotal, shippingCost, total, totalPrice: total }}>
+    <CartContext.Provider value={{ 
+      items, 
+      cart: items, 
+      isLoaded, 
+      addToCart, 
+      removeFromCart, 
+      updateQuantity, 
+      updateCartQuantity: updateQuantity, // Correction : On lie l'alias à la fonction
+      clearCart, 
+      country, 
+      setCountry, 
+      shippingOptions, 
+      selectedShipping, 
+      setSelectedShipping, 
+      subtotal, 
+      shippingCost, 
+      total, 
+      totalPrice: total 
+    }}>
       {children}
     </CartContext.Provider>
   );
