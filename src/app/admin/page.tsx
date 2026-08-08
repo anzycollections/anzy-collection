@@ -10,8 +10,9 @@ import HeroTab from "./components/HeroTab";
 import AboutTab from "./components/AboutTab";
 import FooterTab from "./components/FooterTab";
 import ReviewsTab from "./components/ReviewsTab";
+import OrdersTab from "./components/OrdersTab";
 
-type Tab = "products" | "categories" | "hero" | "about" | "footer" | "reviews" | "shipping";
+type Tab = "products" | "categories" | "hero" | "about" | "footer" | "reviews" | "shipping" | "orders";
 
 export default function AdminPage() {
   const { content, products, saveContent, addProduct, updateProduct, deleteProduct } = useStore();
@@ -67,6 +68,7 @@ export default function AdminPage() {
     { id: "about", label: "À PROPOS", code: "05" },
     { id: "footer", label: "PIED DE PAGE", code: "06" },
     { id: "reviews", label: "AVIS CLIENTS", code: "07" },
+    { id: "orders", label: "COMMANDES", code: "08" },
   ];
 
   return (

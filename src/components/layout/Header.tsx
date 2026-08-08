@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useStore, Langue, Devise } from "@/context/StoreContext";
 import { useCartUI } from "@/context/CartUIContext";
@@ -36,14 +37,14 @@ export default function Header() {
         <div className="w-10 hidden sm:block" />
 
         <div className="text-center absolute left-1/2 -translate-x-1/2">
-          <a href="/" className="block">
+          <Link href="/" className="block">
             <h1 className="text-sm sm:text-base font-serif font-bold tracking-[0.2em] text-[#2C2224] uppercase whitespace-nowrap">
               ANZY COLLECTION
             </h1>
             <span className="text-[7px] sm:text-[8px] font-mono tracking-[0.25em] text-[#E88D9E] uppercase block">
               MAISON DE BEAUTÉ & GAINES
             </span>
-          </a>
+          </Link>
         </div>
 
         <div className="ml-auto flex items-center">

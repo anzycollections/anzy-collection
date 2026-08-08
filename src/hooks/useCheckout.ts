@@ -64,7 +64,9 @@ export function useCheckout() {
 
   const effectiveShipping = isOther ? localSelectedShipping : selectedShipping;
   const shippingCost = effectiveShipping?.price || 0;
-  const total = totalPrice + shippingCost;
+  // Correction : "totalPrice" (issu du panier) inclut déjà un frais de livraison.
+  // On repart de "subtotal" (hors livraison) pour ne compter les frais de port qu'une seule fois.
+  const total = subtotal + shippingCost;
 
   const isFormValid = (): boolean => {
     if (!formData.name.trim() || !formData.phone.trim() || !formData.address.trim() || !formData.city.trim()) return false;

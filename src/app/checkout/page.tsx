@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useCheckout } from "@/hooks/useCheckout";
 import CustomerInfo from "@/components/checkout/CustomerInfo";
 import PaymentSection from "@/components/checkout/PaymentSection";
@@ -26,13 +27,13 @@ export default function CheckoutPage() {
         <div className="text-center space-y-4 p-8">
           <h1 className="text-2xl font-serif font-bold text-[#2C2224]">Votre panier est vide</h1>
           <p className="text-gray-500 text-xs font-mono">Ajoutez des pièces pour continuer.</p>
-          <a href="/" className="inline-block bg-[#2C2224] text-white px-8 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest hover:bg-black transition">Retour à la boutique</a>
+          <Link href="/" className="inline-block bg-[#2C2224] text-white px-8 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest hover:bg-black transition">Retour à la boutique</Link>
         </div>
       </div>
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkout.isFormValid()) {
       alert("Veuillez remplir tous les champs obligatoires et fournir le justificatif.");
@@ -73,6 +74,55 @@ Statut : En attente de validation (24h)
     `.trim();
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
+    // Sauvegarde de la commande (+ justificatif de paiement) en base de données.
+    // Important pour garder une trace exploitable dans l'admin même si la
+    // conversation WhatsApp est perdue ou supprimée. Si cet enregistrement
+    // échoue pour une raison quelconque, on laisse quand même la cliente
+    // finaliser via WhatsApp (canal principal) plutôt que de la bloquer.
+    try {
+      let receiptUrl = "";
+      if (checkout.paymentMethod === "mobile_money" && checkout.receiptFile) {
+        const uploadRes = await fetch(
+          `/api/upload/receipt?filename=${encodeURIComponent(checkout.receiptFile.name)}`,
+          { method: "POST", body: checkout.receiptFile }
+        );
+        if (uploadRes.ok) {
+          const blob = await uploadRes.json();
+          receiptUrl = blob.url;
+        }
+      }
+
+      await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer: {
+            name: checkout.formData.name,
+            email: checkout.formData.email,
+            phone: checkout.formData.phone,
+            address: checkout.formData.address,
+            city: checkout.formData.city,
+            country: checkout.countryName,
+          },
+          items: checkout.items,
+          shipping: {
+            method: checkout.effectiveShipping?.name || "Standard",
+            cost: checkout.shippingCost,
+          },
+          payment: {
+            method: checkout.paymentMethod,
+            operator: checkout.paymentMethod === "mobile_money" ? "Mobile Money" : checkout.transferService,
+            reference: checkout.paymentMethod === "transfer" ? checkout.mtcnCode : "Justificatif joint",
+            receiptUrl,
+          },
+          total: checkout.total,
+          currency: "XOF",
+        }),
+      });
+    } catch (err) {
+      console.error("Erreur lors de l'enregistrement de la commande en base :", err);
+    }
 
     setTimeout(() => {
       checkout.setSubmitting(false);
