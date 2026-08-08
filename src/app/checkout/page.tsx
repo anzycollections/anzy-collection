@@ -11,10 +11,11 @@ import { useCartUI } from "@/context/CartUIContext";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { openCart, closeCart } = useCartUI(); // <--- Corrigé ici : openCart ajouté
+  const { openCart, closeCart } = useCartUI();
   const checkout = useCheckout();
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [completedOrderData, setCompletedOrderData] = useState<any>(null);
 
   useEffect(() => {
     closeCart();
@@ -40,10 +41,25 @@ export default function CheckoutPage() {
     }
     checkout.setSubmitting(true);
     
+    // Sauvegarde des données pour la modale WhatsApp
+    const orderData = {
+      formData: checkout.formData,
+      countryName: checkout.countryName,
+      items: checkout.items,
+      effectiveShipping: checkout.effectiveShipping,
+      shippingCost: checkout.shippingCost,
+      subtotal: checkout.subtotal,
+      total: checkout.total,
+      paymentMethod: checkout.paymentMethod,
+      transferService: checkout.transferService,
+      mtcnCode: checkout.mtcnCode,
+    };
+
     setTimeout(() => {
       checkout.setSubmitting(false);
+      setCompletedOrderData(orderData);
       setShowSuccessModal(true);
-    }, 1500);
+    }, 1000);
   };
 
   const handleBackToCart = () => {
@@ -60,6 +76,7 @@ export default function CheckoutPage() {
           setShowSuccessModal(false);
           router.push("/");
         }}
+        checkoutData={completedOrderData}
       />
 
       <main className="max-w-6xl mx-auto space-y-6">
