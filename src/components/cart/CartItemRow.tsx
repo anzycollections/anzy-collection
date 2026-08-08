@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import Image from "next/image";
 
 export default function CartItemRow({ item, onUpdateQty, onRemove, onEditProduct, convertirPrix, symboleDevise }: any) {
   const [startX, setStartX] = useState<number | null>(null);
@@ -44,7 +45,7 @@ export default function CartItemRow({ item, onUpdateQty, onRemove, onEditProduct
         className="flex gap-3.5 p-3.5 bg-white border border-gray-100 shadow-sm items-center transition-transform duration-200 ease-out rounded-2xl relative z-10"
       >
         <div onClick={() => onEditProduct(item)} className="cursor-pointer group shrink-0">
-          <img src={item.image} alt={title} className="w-14 h-14 object-cover rounded-xl border border-gray-100 group-hover:opacity-80 transition" />
+          <Image src={item.image} alt={title} width={56} height={56} className="w-14 h-14 object-cover rounded-xl border border-gray-100 group-hover:opacity-80 transition" />
         </div>
 
         <div className="flex-1 min-w-0">

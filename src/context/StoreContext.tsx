@@ -151,14 +151,30 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 const LANGUE_KEY = "anzy-langue";
 const DEVISE_KEY = "anzy-devise";
 
-export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "gaines", name: "Gaines", visible: true },
-    { id: "huiles", name: "Huiles Essentielles", visible: true }
-  ]);
-  const [siteConfig, setSiteConfig] = useState<StoreContent>({});
-  const [loading, setLoading] = useState(true);
+export function StoreProvider({
+  children,
+  initialProducts,
+  initialCategories,
+  initialContent,
+}: {
+  children: React.ReactNode;
+  initialProducts?: Product[];
+  initialCategories?: Category[];
+  initialContent?: StoreContent;
+}) {
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [categories, setCategories] = useState<Category[]>(
+    initialCategories && initialCategories.length > 0
+      ? initialCategories
+      : [
+          { id: "gaines", name: "Gaines", visible: true },
+          { id: "huiles", name: "Huiles Essentielles", visible: true }
+        ]
+  );
+  const [siteConfig, setSiteConfig] = useState<StoreContent>(initialContent || {});
+  // Si des données initiales (chargées côté serveur) sont déjà là, pas besoin
+  // d'afficher un état de chargement au premier rendu.
+  const [loading, setLoading] = useState(!initialProducts);
 
   const [langue, setLangueState] = useState<Langue>("FR");
   const [devise, setDeviseState] = useState<Devise>("XOF");

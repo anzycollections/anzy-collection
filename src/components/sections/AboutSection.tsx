@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useStore } from "@/context/StoreContext";
 
 export default function AboutSection() {
@@ -34,12 +35,14 @@ export default function AboutSection() {
         {/* PETIT CERCLE AVATAR */}
         <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-full p-1 bg-gradient-to-tr from-[#E88D9E] to-pink-100 shadow-md">
           {/* On ajoute bg-gray-100 et flex/center pour le mode "vide" */}
-          <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-50 flex items-center justify-center">
+          <div className="relative w-full h-full rounded-full overflow-hidden border-2 border-white bg-gray-50 flex items-center justify-center">
             {mainImage ? (
-              <img
+              <Image
                 src={mainImage}
                 alt={founderName}
-                className="w-full h-full object-cover"
+                fill
+                sizes="128px"
+                className="object-cover"
               />
             ) : (
               <span className="text-gray-300 font-serif text-3xl font-light">

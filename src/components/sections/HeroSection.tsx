@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useStore } from "@/context/StoreContext";
 
 export default function HeroSection() {
@@ -32,12 +33,15 @@ export default function HeroSection() {
           {hero.images && hero.images.length > 0 ? (
             // Ajout du chaînage optionnel (?.) pour rassurer TypeScript
             hero.images?.map((imgUrl, index) => (
-              <img 
+              <Image 
                 key={index}
                 src={imgUrl} 
                 alt={`Hero ${index}`} 
+                fill
+                priority={index === 0}
+                sizes="(max-width: 768px) 100vw, 1152px"
                 // La transition gère le fondu. L'opacité est à 100 si c'est la bonne image, 0 sinon.
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+                className={`object-cover transition-opacity duration-1000 ease-in-out ${
                   index === currentImageIndex ? "opacity-100" : "opacity-0"
                 }`} 
               />

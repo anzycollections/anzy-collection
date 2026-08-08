@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Product, useStore } from "@/context/StoreContext";
 import { useCart } from "@/context/CartContext";
 import ProductDescription from "./ProductDescription";
@@ -142,16 +143,18 @@ export default function ProductDrawer({
                       key={idx}
                       type="button"
                       onClick={() => setActiveImageIndex(idx)}
-                      className={`w-full aspect-square rounded-xl overflow-hidden border transition-all duration-200 cursor-pointer
+                      className={`relative w-full aspect-square rounded-xl overflow-hidden border transition-all duration-200 cursor-pointer
                         ${idx === activeImageIndex
                           ? "border-[#2C2224] shadow-md ring-1 ring-[#2C2224]" 
                           : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
                         }`}
                     >
-                      <img
+                      <Image
                         src={img}
                         alt={`${product.name} - Miniature ${idx + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="50px"
+                        className="object-cover"
                       />
                     </button>
                   ))}
@@ -160,10 +163,12 @@ export default function ProductDrawer({
 
               {/* Image principale */}
               <div className="flex-1 relative rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-sm aspect-[4/5]">
-                <img
+                <Image
                   src={allImages[activeImageIndex]}
                   alt={`${product.name} - Vue ${activeImageIndex + 1}`}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 400px"
+                  className="object-cover"
                 />
               </div>
 
