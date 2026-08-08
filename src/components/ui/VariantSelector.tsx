@@ -2,6 +2,32 @@
 
 import { useMemo, useState, useEffect } from "react";
 
+// Dictionnaire de reconnaissance des noms de couleur courants (FR + variantes usuelles).
+// Si un libellé de variante correspond à une entrée ici, on affiche un rond coloré
+// au lieu du texte. Sinon (ex: "S", "M", "42"), on garde l'affichage textuel actuel
+// sans aucun changement — donc aucun risque pour les variantes non liées à la couleur.
+const COLOR_MAP: Record<string, string> = {
+  noir: "#1a1a1a", "noire": "#1a1a1a",
+  blanc: "#ffffff", "blanche": "#ffffff",
+  beige: "#e8dcc8",
+  rose: "#e88d9e", "rose poudré": "#e8b4bc",
+  rouge: "#c0392b", bordeaux: "#6d2130",
+  bleu: "#2c4a7c", marine: "#1b2a4a", "bleu marine": "#1b2a4a", "bleu ciel": "#a9cce3",
+  vert: "#3f6b4f", kaki: "#6b6b47", "vert olive": "#6b6b47", émeraude: "#046307",
+  jaune: "#e8c547", moutarde: "#c9a227",
+  orange: "#d9772e", corail: "#e57a5f",
+  gris: "#8c8c8c", anthracite: "#3a3a3a", "gris clair": "#c4c4c4", "gris foncé": "#4a4a4a",
+  marron: "#6b4226", chocolat: "#4a2c17", camel: "#c19a6b", cognac: "#9a463d", taupe: "#8b7d6b",
+  violet: "#6c3483", mauve: "#b39ddb", lilas: "#c8a2c8",
+  doré: "#c9a635", or: "#c9a635", argenté: "#c0c0c0", argent: "#c0c0c0",
+  nude: "#e3bfa5", crème: "#f2e9dc", ivoire: "#f5f0e6",
+};
+
+function getSwatchColor(label: string): string | null {
+  const key = label.trim().toLowerCase();
+  return COLOR_MAP[key] || null;
+}
+
 interface VariantSelectorProps {
   variantes: any[];
   selectedVariante: any;
@@ -98,13 +124,45 @@ export default function VariantSelector({
     return (
       <div className="space-y-3">
         <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
-          Choix de la variante
+          {variantes.some((v) => getSwatchColor(v.name || v.title || "")) ? "Couleur" : "Choix de la variante"}
         </span>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {variantes.map((v: any) => {
             const label = v.name || v.title || "Option";
             const isSelected = selectedVariante?.id === v.id;
             const disabled = (v.stock ?? 0) === 0;
+            const swatchColor = getSwatchColor(label);
+
+            if (swatchColor) {
+              return (
+                <button
+                  key={v.id || label}
+                  type="button"
+                  onClick={() => onSelectVariante(v)}
+                  disabled={disabled}
+                  title={label}
+                  className={`relative w-10 h-10 rounded-full transition-all duration-200 border-2 shrink-0
+                    ${isSelected ? "border-[#2C2224] scale-110 shadow-md" : "border-white shadow-sm hover:scale-105"}
+                    ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
+                  `}
+                  style={{
+                    backgroundColor: swatchColor,
+                    boxShadow: isSelected ? undefined : "0 0 0 1px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  {disabled && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="w-full h-px bg-red-500 rotate-45" />
+                    </span>
+                  )}
+                  {!disabled && v.stock <= 3 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                      {v.stock}
+                    </span>
+                  )}
+                </button>
+              );
+            }
 
             return (
               <button
@@ -130,6 +188,12 @@ export default function VariantSelector({
             );
           })}
         </div>
+        {(() => {
+          const selectedLabel = selectedVariante ? (selectedVariante.name || selectedVariante.title || "") : "";
+          return variantes.some((v) => getSwatchColor(v.name || v.title || "")) && selectedLabel ? (
+            <p className="text-[10px] font-mono text-gray-500">Sélection : <strong className="text-[#2C2224]">{selectedLabel}</strong></p>
+          ) : null;
+        })()}
       </div>
     );
   }
@@ -163,26 +227,79 @@ export default function VariantSelector({
       {models.length > 0 && (
         <div className="space-y-2.5">
           <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
-            Modèle
+            {models.some((m) => getSwatchColor(m)) ? "Couleur" : "Modèle"}
           </span>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             {models.map((m) => {
+              const swatchColor = getSwatchColor(m);
+              // Stock de la combinaison (poids sélectionné + ce modèle), pour griser/barrer si en rupture.
+              const matchingVariante = variantes.find((v) => {
+                const label = v.name || v.title || "";
+                if (label.includes(selectedWeight) && label.includes(m)) return true;
+                if (v.combo) {
+                  const vals = Object.values(v.combo).map((val) => String(val));
+                  return vals.includes(selectedWeight) && vals.includes(m);
+                }
+                return false;
+              });
+              const stock = matchingVariante?.stock;
+              const outOfStock = matchingVariante && stock === 0;
+
+              if (swatchColor) {
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setSelectedModel(m)}
+                    disabled={outOfStock}
+                    title={m}
+                    className={`relative w-10 h-10 rounded-full transition-all duration-200 border-2 shrink-0
+                      ${m === selectedModel ? "border-[#2C2224] scale-110 shadow-md" : "border-white shadow-sm hover:scale-105"}
+                      ${outOfStock ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
+                    `}
+                    style={{
+                      backgroundColor: swatchColor,
+                      boxShadow: m === selectedModel ? undefined : "0 0 0 1px rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    {outOfStock && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-full h-px bg-red-500 rotate-45" />
+                      </span>
+                    )}
+                    {!outOfStock && typeof stock === "number" && stock <= 3 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                        {stock}
+                      </span>
+                    )}
+                  </button>
+                );
+              }
+
               return (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setSelectedModel(m)}
-                  className={`flex items-center justify-center w-10 h-10 rounded-full text-[11px] font-mono transition-all duration-200 border cursor-pointer
+                  disabled={outOfStock}
+                  className={`relative flex items-center justify-center w-10 h-10 rounded-full text-[11px] font-mono transition-all duration-200 border
                     ${m === selectedModel
                       ? "bg-white text-[#2C2224] border-[#2C2224] shadow-md font-bold"
                       : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
-                    }`}
+                    }
+                    ${outOfStock ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                  `}
                 >
                   <span>{m}</span>
                 </button>
               );
             })}
           </div>
+          {(() => {
+            return models.some((m) => getSwatchColor(m)) && selectedModel ? (
+              <p className="text-[10px] font-mono text-gray-500">Sélection : <strong className="text-[#2C2224]">{selectedModel}</strong></p>
+            ) : null;
+          })()}
         </div>
       )}
     </div>
