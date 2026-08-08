@@ -223,9 +223,8 @@ export default function ProductDrawer({
 
             <ProductDescription description={product.description || ""} />
 
-            {/* REVIEWS... */}
+            {/* REVIEWS */}
             <div className="pt-4 border-t border-[#E88D9E]/15 space-y-3">
-               {/* (Le code des reviews reste inchangé) */}
                <div className="flex justify-between items-center">
                 <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium">AVIS ({reviews.length})</span>
                 <button type="button" onClick={() => setShowReviewForm(!showReviewForm)} className="text-[9px] font-mono text-[#E88D9E] uppercase font-semibold hover:underline cursor-pointer">
@@ -233,7 +232,78 @@ export default function ProductDrawer({
                 </button>
               </div>
 
-              {/* ... reste du code des reviews ... */}
+              {successMessage && (
+                <p className="text-[10px] font-mono text-green-600 bg-green-50 border border-green-100 rounded-xl px-3 py-2">
+                  {successMessage}
+                </p>
+              )}
+
+              {showReviewForm && (
+                <form onSubmit={handleAddReview} className="space-y-2.5 p-3.5 rounded-xl border border-gray-100 bg-[#FAF7F5]/50">
+                  <div>
+                    <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">Votre note</label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setNewRating(star)}
+                          className={`text-lg leading-none cursor-pointer transition ${star <= newRating ? "text-amber-400" : "text-gray-200"}`}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">Votre prénom</label>
+                    <input
+                      type="text"
+                      value={newAuthor}
+                      onChange={(e) => setNewAuthor(e.target.value)}
+                      required
+                      className="w-full text-xs font-mono px-3 py-2 rounded-lg border border-gray-200 focus:border-[#E88D9E] outline-none"
+                      placeholder="Ex : Fatima"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">Votre avis</label>
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      required
+                      rows={3}
+                      className="w-full text-xs font-mono px-3 py-2 rounded-lg border border-gray-200 focus:border-[#E88D9E] outline-none resize-none"
+                      placeholder="Qu'avez-vous pensé de ce produit ?"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full py-2.5 rounded-lg bg-[#2C2224] hover:bg-[#E88D9E] text-white text-[10px] font-mono uppercase tracking-widest transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {submitting ? "Envoi..." : "Envoyer mon avis"}
+                  </button>
+                </form>
+              )}
+
+              <div className="space-y-2.5">
+                {loadingReviews ? (
+                  <p className="text-[10px] font-mono text-gray-400 italic">Chargement des avis...</p>
+                ) : reviews.length === 0 ? (
+                  <p className="text-[10px] font-mono text-gray-400 italic">Aucun avis pour ce produit pour le moment.</p>
+                ) : (
+                  reviews.map((r) => (
+                    <div key={r.id} className="p-3 rounded-xl border border-gray-100 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-semibold text-[#2C2224]">{r.author}</span>
+                        <span className="text-amber-400 text-xs">{"★".repeat(r.rating)}<span className="text-gray-200">{"★".repeat(5 - r.rating)}</span></span>
+                      </div>
+                      <p className="text-[11px] font-mono text-gray-500 leading-relaxed">{r.comment}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
