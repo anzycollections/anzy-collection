@@ -48,7 +48,17 @@ function unauthorizedResponse() {
   });
 }
 
+// ⚠️ PROTECTION TEMPORAIREMENT DÉSACTIVÉE ⚠️
+// Le temps de finaliser le site (upload produits, tests admin, etc.),
+// /admin et les routes d'écriture sont accessibles sans mot de passe.
+// Pour RÉACTIVER la protection : repasse cette valeur à false.
+const AUTH_TEMPORARILY_DISABLED = true;
+
 export function proxy(req: NextRequest) {
+  if (AUTH_TEMPORARILY_DISABLED) {
+    return NextResponse.next();
+  }
+
   const { pathname } = req.nextUrl;
   const method = req.method.toUpperCase();
 

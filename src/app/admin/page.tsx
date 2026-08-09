@@ -149,6 +149,7 @@ export default function AdminPage() {
             {activeTab === "about" && <AboutTab content={content} saveContent={saveContent} />}
             {activeTab === "footer" && <FooterTab content={content} saveContent={saveContent} />}
             {activeTab === "reviews" && <ReviewsTab />}
+            {activeTab === "orders" && <OrdersTab />}
           </>
         ) : (
           <div className="py-20 text-center font-mono text-xs text-gray-400 uppercase tracking-widest">Chargement des données...</div>
