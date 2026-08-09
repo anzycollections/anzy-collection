@@ -6,16 +6,12 @@ import { Product, useStore } from "@/context/StoreContext";
 interface ProductCardProps {
   product: Product;
   onSelect: (product: Product) => void;
-  favorites: { [key: string]: boolean };
-  onToggleFavorite: (id: string, e: React.MouseEvent) => void;
   viewMode?: "grid" | "list";
 }
 
 export default function ProductCard({
   product,
   onSelect,
-  favorites,
-  onToggleFavorite,
   viewMode = "grid",
 }: ProductCardProps) {
   const { convertirPrix, symboleDevise } = useStore();
@@ -119,16 +115,6 @@ export default function ProductCard({
             {formatPrix()}
           </span>
         </div>
-
-        <button
-          type="button"
-          onClick={(e) => onToggleFavorite(product.id, e)}
-          className="w-9 h-9 rounded-full glass-pill flex items-center justify-center text-sm shadow-sm hover:scale-110 transition shrink-0 cursor-pointer"
-        >
-          <span className={favorites[product.id] ? "text-[#E88D9E]" : "text-gray-400"}>
-            {favorites[product.id] ? "♥" : "♡"}
-          </span>
-        </button>
       </div>
     );
   }
@@ -139,16 +125,6 @@ export default function ProductCard({
       onClick={() => onSelect(product)}
       className="group glass-card glass-card-hover rounded-3xl p-5 cursor-pointer flex flex-col h-full relative text-[#2C2224]"
     >
-      <button
-        type="button"
-        onClick={(e) => onToggleFavorite(product.id, e)}
-        className="absolute top-6 right-6 z-10 w-9 h-9 rounded-full glass-pill flex items-center justify-center text-sm shadow-sm hover:scale-110 transition cursor-pointer"
-      >
-        <span className={favorites[product.id] ? "text-[#E88D9E]" : "text-gray-400"}>
-          {favorites[product.id] ? "♥" : "♡"}
-        </span>
-      </button>
-
       <div className="absolute top-6 left-6 z-10">
         <span className="glass-pill text-[#2C2224] text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-full font-bold shadow-xs">
           {product.badge || "Nouveauté"}

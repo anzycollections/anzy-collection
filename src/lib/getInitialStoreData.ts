@@ -49,6 +49,7 @@ export async function getInitialStoreData(): Promise<{
         about: (config?.about as StoreContent["about"]) || {},
         footer: (config?.footer as StoreContent["footer"]) || {},
         social: (config?.social as StoreContent["social"]) || {},
+        lookbook: (config?.lookbook as StoreContent["lookbook"]) || [],
         shippingPrices: DEFAULT_SHIPPING_PRICES,
       },
     };

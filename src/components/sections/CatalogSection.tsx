@@ -16,16 +16,10 @@ export default function CatalogSection({
   onSelectProduct,
 }: CatalogSectionProps) {
   const { content } = useStore();
-  const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   const categories = content?.categories || [];
   const products = content?.products || [];
-
-  const handleToggleFavorite = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const filteredProducts = products.filter((p: Product) => {
     if (!p.visible) return false;
@@ -143,8 +137,6 @@ export default function CatalogSection({
               key={product.id}
               product={product}
               onSelect={onSelectProduct}
-              favorites={favorites}
-              onToggleFavorite={handleToggleFavorite}
               viewMode={viewMode}
             />
           ))}

@@ -72,6 +72,13 @@ export interface StoreContent {
     tiktok?: string;
     facebook?: string;
   };
+  lookbook?: {
+    id: string;
+    imageUrl: string;
+    title?: string;
+    subtitle?: string;
+    link?: string;
+  }[];
   shippingPrices?: Record<string, number>;
 }
 
