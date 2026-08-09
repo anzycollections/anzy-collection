@@ -150,6 +150,28 @@ export default function ProductDrawer({
           </button>
         </div>
 
+        {/* Flèches de navigation, si plusieurs images */}
+        {allImages.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setActiveImageIndex((activeImageIndex - 1 + allImages.length) % allImages.length)}
+              aria-label="Image précédente"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-pointer active:scale-95"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveImageIndex((activeImageIndex + 1) % allImages.length)}
+              aria-label="Image suivante"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-pointer active:scale-95"
+            >
+              ›
+            </button>
+          </>
+        )}
+
         {/* Pastilles de pagination si plusieurs images */}
         {allImages.length > 1 && (
           <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">

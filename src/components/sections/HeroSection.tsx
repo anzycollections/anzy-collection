@@ -50,7 +50,7 @@ export default function HeroSection() {
             <div className="absolute inset-0 bg-[#E88D9E]/10" />
           )}
 
-          <div className="absolute inset-0 bg-black/35" />
+          <div className="absolute inset-0 bg-black/35 pointer-events-none z-[1]" />
           
           {/* Bloc du HAUT */}
           <div className="relative z-10 space-y-4 pt-4">
@@ -68,7 +68,7 @@ export default function HeroSection() {
               {hero.subtitle || "Découvrez notre collection exclusive."}
             </p>
             <a 
-              href="#catalogue" 
+              href="#catalog" 
               className="inline-block bg-[#E88D9E] text-white px-8 py-3.5 rounded-2xl text-[11px] font-mono font-bold uppercase tracking-widest shadow-lg hover:bg-white hover:text-[#2C2224] transition-all"
             >
               {hero.buttonText || "DÉCOUVRIR LA COLLECTION ↓"}

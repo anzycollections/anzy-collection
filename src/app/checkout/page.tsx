@@ -43,45 +43,13 @@ export default function CheckoutPage() {
 
     const WHATSAPP_NUMBER = "2290156646045";
 
-    const itemsText = checkout.items
-      .map(item => `• ${item.productName} (${item.varianteName || 'Standard'}) x${item.quantity} - ${(item.price * item.quantity).toLocaleString()} F CFA`)
-      .join("\n");
-
-    const paymentText = checkout.paymentMethod === "mobile_money"
-      ? "Paiement : Mobile Money (Reçu fourni)"
-      : `Transfert : ${checkout.transferService} (MTCN: ${checkout.mtcnCode})`;
-
-    const message = `
-NOUVELLE COMMANDE - ANZY COLLECTION
-
-CLIENTE :
-• Nom : ${checkout.formData.name}
-• Téléphone : ${checkout.formData.phone}
-• Adresse : ${checkout.formData.address}, ${checkout.formData.city} (${checkout.countryName})
-${checkout.formData.email ? `• Email : ${checkout.formData.email}` : ""}
-
-ARTICLES :
-${itemsText}
-
-LIVRAISON :
-• ${checkout.effectiveShipping?.name || "Standard"} : ${checkout.shippingCost.toLocaleString()} F CFA
-
-TOTAL : ${checkout.total.toLocaleString()} F CFA
-
-${paymentText}
-
-Statut : En attente de validation (24h)
-    `.trim();
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-
-    // Sauvegarde de la commande (+ justificatif de paiement) en base de données.
-    // Important pour garder une trace exploitable dans l'admin même si la
-    // conversation WhatsApp est perdue ou supprimée. Si cet enregistrement
-    // échoue pour une raison quelconque, on laisse quand même la cliente
-    // finaliser via WhatsApp (canal principal) plutôt que de la bloquer.
+    // 1) Upload du reçu + sauvegarde de la commande AVANT de construire le message,
+    // pour pouvoir inclure le vrai lien du justificatif dans le texte WhatsApp
+    // (WhatsApp ne permet pas de joindre une image via un lien pré-rempli,
+    // un lien cliquable vers l'image est le seul moyen de la transmettre).
+    let receiptUrl = "";
+    let saveFailed = false;
     try {
-      let receiptUrl = "";
       if (checkout.paymentMethod === "mobile_money" && checkout.receiptFile) {
         const uploadRes = await fetch(
           `/api/upload/receipt?filename=${encodeURIComponent(checkout.receiptFile.name)}`,
@@ -90,10 +58,12 @@ Statut : En attente de validation (24h)
         if (uploadRes.ok) {
           const blob = await uploadRes.json();
           receiptUrl = blob.url;
+        } else {
+          saveFailed = true;
         }
       }
 
-      await fetch("/api/orders", {
+      const orderRes = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -120,9 +90,51 @@ Statut : En attente de validation (24h)
           currency: "XOF",
         }),
       });
+      if (!orderRes.ok) saveFailed = true;
     } catch (err) {
       console.error("Erreur lors de l'enregistrement de la commande en base :", err);
+      saveFailed = true;
     }
+
+    // On informe la cliente si le justificatif n'a pas pu être transmis,
+    // pour qu'elle pense à l'envoyer manuellement sur WhatsApp en backup —
+    // plutôt que de laisser ça disparaître silencieusement.
+    if (checkout.paymentMethod === "mobile_money" && checkout.receiptFile && !receiptUrl) {
+      alert("Ta commande est enregistrée, mais l'envoi automatique de ta capture d'écran a échoué. Merci de la joindre manuellement dans la conversation WhatsApp qui va s'ouvrir.");
+    }
+
+    // 2) Construction du message, avec le vrai lien du reçu si disponible
+    const itemsText = checkout.items
+      .map(item => `• ${item.productName} (${item.varianteName || 'Standard'}) x${item.quantity} - ${(item.price * item.quantity).toLocaleString()} F CFA`)
+      .join("\n");
+
+    const paymentText = checkout.paymentMethod === "mobile_money"
+      ? `Paiement : Mobile Money${receiptUrl ? `\n• Reçu : ${receiptUrl}` : " (reçu à joindre manuellement ci-dessous)"}`
+      : `Transfert : ${checkout.transferService} (MTCN: ${checkout.mtcnCode})`;
+
+    const message = `
+NOUVELLE COMMANDE - ANZY COLLECTION
+
+CLIENTE :
+• Nom : ${checkout.formData.name}
+• Téléphone : ${checkout.formData.phone}
+• Adresse : ${checkout.formData.address}, ${checkout.formData.city} (${checkout.countryName})
+${checkout.formData.email ? `• Email : ${checkout.formData.email}` : ""}
+
+ARTICLES :
+${itemsText}
+
+LIVRAISON :
+• ${checkout.effectiveShipping?.name || "Standard"} : ${checkout.shippingCost.toLocaleString()} F CFA
+
+TOTAL : ${checkout.total.toLocaleString()} F CFA
+
+${paymentText}
+
+Statut : En attente de validation (24h)
+    `.trim();
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
     setTimeout(() => {
       checkout.setSubmitting(false);

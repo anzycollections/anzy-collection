@@ -6,9 +6,11 @@ interface ProductTableProps {
   products: Product[];
   onEdit: (product: Product) => void;
   onDelete?: (productId: string) => void;
+  onDuplicate?: (product: Product) => void;
+  onToggleVisible?: (product: Product) => void;
 }
 
-export default function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
+export default function ProductTable({ products, onEdit, onDelete, onDuplicate, onToggleVisible }: ProductTableProps) {
   const store = useStore() as any;
   const convertirPrix = store?.convertirPrix || ((p: number) => p);
   const symboleDevise = store?.symboleDevise || "F CFA";
@@ -38,7 +40,7 @@ export default function ProductTable({ products, onEdit, onDelete }: ProductTabl
             {products.map((p) => {
               const mainImg = p.images && p.images.length > 0 ? p.images[0] : null;
               return (
-                <tr key={p.id} className="hover:bg-gray-50/50 transition">
+                <tr key={p.id} className={`hover:bg-gray-50/50 transition ${p.visible === false ? "opacity-50" : ""}`}>
                   <td className="py-3 px-4 sm:px-6">
                     <div className="flex items-center gap-2.5">
                       {mainImg ? (
@@ -55,6 +57,11 @@ export default function ProductTable({ products, onEdit, onDelete }: ProductTabl
                       <div className="min-w-0">
                         <span className="font-serif font-bold text-[#2C2224] block truncate text-xs">
                           {p.name}
+                          {p.visible === false && (
+                            <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded-full text-[8px] font-mono font-bold bg-gray-200 text-gray-600 align-middle">
+                              MASQUÉ
+                            </span>
+                          )}
                         </span>
                         <span className="text-[8px] font-mono text-gray-400 uppercase block truncate">
                           {p.brand || "ANZY COLLECTION"}
@@ -82,6 +89,26 @@ export default function ProductTable({ products, onEdit, onDelete }: ProductTabl
                       >
                         Éditer
                       </button>
+                      {onDuplicate && (
+                        <button
+                          type="button"
+                          onClick={() => onDuplicate(p)}
+                          className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-gray-100 hover:bg-[#E88D9E] hover:text-white text-[9px] sm:text-[10px] font-mono uppercase font-bold transition cursor-pointer"
+                          title="Dupliquer"
+                        >
+                          Dupliquer
+                        </button>
+                      )}
+                      {onToggleVisible && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleVisible(p)}
+                          className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-gray-100 hover:bg-amber-500 hover:text-white text-[9px] sm:text-[10px] font-mono uppercase font-bold transition cursor-pointer"
+                          title={p.visible === false ? "Rendre visible" : "Masquer"}
+                        >
+                          {p.visible === false ? "Afficher" : "Masquer"}
+                        </button>
+                      )}
                       {onDelete && (
                         <button
                           type="button"

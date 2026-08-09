@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useStore, Product } from "@/context/StoreContext";
-import ProductCard from "@/components/ui/ProductCard";
+import FeaturedProductCard from "@/components/ui/FeaturedProductCard";
 
 interface FeaturedSliderProps {
   onSelectProduct: (product: Product) => void;
@@ -58,18 +58,18 @@ export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps)
   }
 
   return (
-    <section className="space-y-6 pt-10">
+    <section className="space-y-6 pt-10 pb-2 -mx-4 sm:mx-0 px-4 sm:px-8 py-10 bg-[#2C2224] sm:rounded-[2.5rem]">
       {/* En-tête de la section */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[#E88D9E]/15 pb-4 px-1">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-white/10 pb-4 px-1">
         <div>
           <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold block">
             SÉLECTION ANZY
           </span>
-          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#2C2224]">
+          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white">
             Pièces Iconiques
           </h2>
         </div>
-        <p className="text-xs text-gray-500 font-light max-w-xs">
+        <p className="text-xs text-white/50 font-light max-w-xs">
           Les incontournables plébiscités par nos clientes pour sublimer vos courbes.
         </p>
       </div>
@@ -83,13 +83,11 @@ export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps)
         {displayProducts.map((product: Product) => (
           <div 
             key={product.id} 
-            className="w-[280px] sm:w-[320px] shrink-0 snap-start"
+            className="w-[220px] sm:w-[260px] shrink-0 snap-start"
           >
-            <ProductCard
+            <FeaturedProductCard
               product={product}
               onSelect={onSelectProduct}
-              favorites={{}}
-              onToggleFavorite={() => {}}
             />
           </div>
         ))}

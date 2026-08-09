@@ -64,8 +64,9 @@ export function proxy(req: NextRequest) {
 
   const isAdminPage = pathname.startsWith("/admin");
 
-  // Consultation des commandes (GET) : réservée à l'admin.
-  const isOrdersRead = pathname.startsWith("/api/orders") && method === "GET";
+  // Consultation ET mise à jour des commandes : réservées à l'admin.
+  // (POST reste public : c'est ainsi qu'une cliente enregistre sa commande)
+  const isOrdersRead = pathname.startsWith("/api/orders") && method !== "POST";
 
   // Écriture sur les produits / contenu du site : réservée à l'admin.
   const isProductsWrite = pathname.startsWith("/api/products") && method !== "GET";

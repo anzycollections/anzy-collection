@@ -60,6 +60,31 @@ export default function AdminPage() {
     }
   };
 
+  const handleDuplicateProduct = async (product: Product) => {
+    try {
+      // On enlève l'id existant pour que la base en génère un nouveau, et on
+      // masque la copie par défaut le temps de l'ajuster (nom, prix, stock...)
+      const { id, ...rest } = product as any;
+      await addProduct({
+        ...rest,
+        name: `${product.name} (copie)`,
+        visible: false,
+      });
+    } catch (e) {
+      console.error(e);
+      alert("Une erreur est survenue lors de la duplication du produit.");
+    }
+  };
+
+  const handleToggleVisible = async (product: Product) => {
+    try {
+      await updateProduct(product.id, { visible: !product.visible } as Partial<Product>);
+    } catch (e) {
+      console.error(e);
+      alert("Une erreur est survenue lors du changement de visibilité.");
+    }
+  };
+
   const tabs = [
     { id: "products", label: "PRODUITS", code: "01" },
     { id: "categories", label: "CATÉGORIES", code: "02" },
@@ -136,7 +161,7 @@ export default function AdminPage() {
             {showForm && (
               <ProductForm editingProduct={editingProduct} onSave={handleSaveProduct} />
             )}
-            <ProductTable products={filtered} onEdit={(p: Product) => { setEditingProduct(p); setShowForm(true); }} onDelete={handleDeleteProduct} />
+            <ProductTable products={filtered} onEdit={(p: Product) => { setEditingProduct(p); setShowForm(true); }} onDelete={handleDeleteProduct} onDuplicate={handleDuplicateProduct} onToggleVisible={handleToggleVisible} />
           </div>
         )}
 
