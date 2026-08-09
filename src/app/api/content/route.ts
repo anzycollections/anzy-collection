@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     // 2. Sauvegarde du contenu (hero / about / footer / social) seulement si fourni,
     // pour ne jamais écraser une section avec un objet vide par erreur.
-    const hasSiteContentFields = body.hero || body.about || body.footer || body.social;
+    const hasSiteContentFields = body.hero || body.about || body.footer || body.social || body.lookbook;
     if (hasSiteContentFields) {
       const existing = await db
         .select()
@@ -58,6 +58,7 @@ export async function POST(request: Request) {
         about: body.about ?? current?.about ?? {},
         footer: body.footer ?? current?.footer ?? {},
         social: body.social ?? current?.social ?? {},
+        lookbook: body.lookbook ?? current?.lookbook ?? [],
       };
 
       await db

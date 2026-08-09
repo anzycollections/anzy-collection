@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Product, useStore } from "@/context/StoreContext";
 import { useCart } from "@/context/CartContext";
@@ -44,6 +44,21 @@ export default function ProductDrawer({
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
+
+  // Défilement des images par balayage tactile (swipe)
+  const touchStartX = useRef(0);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(deltaX) < 40) return; // balayage trop court, on ignore
+    if (deltaX < 0) {
+      setActiveImageIndex((prev) => (prev + 1) % allImages.length);
+    } else {
+      setActiveImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+    }
+  };
 
   const [newRating, setNewRating] = useState(5);
   const [newAuthor, setNewAuthor] = useState("");
@@ -113,7 +128,11 @@ export default function ProductDrawer({
     <div className="fixed inset-0 z-50 bg-[#FAF7F5] overflow-y-auto">
 
       {/* IMAGE PLEIN ÉCRAN */}
-      <div className="relative w-full h-[58vh] sm:h-[64vh] bg-gray-100">
+      <div
+        className="relative w-full h-[58vh] sm:h-[64vh] bg-gray-100"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {allImages.length > 0 ? (
           <Image
             src={allImages[activeImageIndex]}
@@ -149,28 +168,6 @@ export default function ProductDrawer({
             ✕
           </button>
         </div>
-
-        {/* Flèches de navigation, si plusieurs images */}
-        {allImages.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={() => setActiveImageIndex((activeImageIndex - 1 + allImages.length) % allImages.length)}
-              aria-label="Image précédente"
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-pointer active:scale-95"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveImageIndex((activeImageIndex + 1) % allImages.length)}
-              aria-label="Image suivante"
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-pointer active:scale-95"
-            >
-              ›
-            </button>
-          </>
-        )}
 
         {/* Pastilles de pagination si plusieurs images */}
         {allImages.length > 1 && (

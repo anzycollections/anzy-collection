@@ -11,8 +11,9 @@ import AboutTab from "./components/AboutTab";
 import FooterTab from "./components/FooterTab";
 import ReviewsTab from "./components/ReviewsTab";
 import OrdersTab from "./components/OrdersTab";
+import LookbookTab from "./components/LookbookTab";
 
-type Tab = "products" | "categories" | "hero" | "about" | "footer" | "reviews" | "shipping" | "orders";
+type Tab = "products" | "categories" | "hero" | "about" | "footer" | "reviews" | "shipping" | "orders" | "lookbook";
 
 export default function AdminPage() {
   const { content, products, saveContent, addProduct, updateProduct, deleteProduct } = useStore();
@@ -94,6 +95,7 @@ export default function AdminPage() {
     { id: "footer", label: "PIED DE PAGE", code: "06" },
     { id: "reviews", label: "AVIS CLIENTS", code: "07" },
     { id: "orders", label: "COMMANDES", code: "08" },
+    { id: "lookbook", label: "LOOKBOOK", code: "09" },
   ];
 
   return (
@@ -175,6 +177,7 @@ export default function AdminPage() {
             {activeTab === "footer" && <FooterTab content={content} saveContent={saveContent} />}
             {activeTab === "reviews" && <ReviewsTab />}
             {activeTab === "orders" && <OrdersTab />}
+            {activeTab === "lookbook" && <LookbookTab content={content} saveContent={saveContent} />}
           </>
         ) : (
           <div className="py-20 text-center font-mono text-xs text-gray-400 uppercase tracking-widest">Chargement des données...</div>

@@ -42,6 +42,13 @@ export const siteContent = pgTable("site_content", {
   about: jsonb("about").notNull(),
   footer: jsonb("footer").notNull(),
   social: jsonb("social").notNull(),
+  lookbook: jsonb("lookbook").$type<{
+    id: string;
+    imageUrl: string;
+    title?: string;
+    subtitle?: string;
+    link?: string;
+  }[]>().default([]),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

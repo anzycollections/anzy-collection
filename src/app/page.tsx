@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useStore, Product } from "@/context/StoreContext";
 import HeroSection from "@/components/sections/HeroSection";
 import FeaturedSlider from "@/components/sections/FeaturedSlider";
+import LookbookSection from "@/components/sections/LookbookSection";
 import CatalogSection from "@/components/sections/CatalogSection";
 import AboutSection from "@/components/sections/AboutSection";
 import ProductDrawer from "@/components/ui/ProductDrawer";
@@ -25,6 +26,9 @@ export default function Home() {
         <FeaturedSlider
           onSelectProduct={(p: Product) => setSelectedProduct(p)}
         />
+
+        {/* Section Lookbook : bannières éditoriales libres */}
+        <LookbookSection />
 
         {/* Section 2 : Le Catalogue complet avec filtres */}
         <CatalogSection
