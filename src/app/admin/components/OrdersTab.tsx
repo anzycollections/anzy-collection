@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { generateOrderReceiptPdf } from "@/lib/generateReceiptPdf";
 
 interface OrderItem {
   productName: string;
@@ -47,6 +48,19 @@ export default function OrdersTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
+
+  const handleDownloadReceipt = async (order: Order) => {
+    setGeneratingPdfId(order.id);
+    try {
+      await generateOrderReceiptPdf(order);
+    } catch (e) {
+      console.error(e);
+      alert("Impossible de générer le reçu PDF.");
+    } finally {
+      setGeneratingPdfId(null);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/orders")
@@ -164,6 +178,14 @@ export default function OrdersTab() {
                   ))}
                 </div>
                 <div className="border-t border-gray-100 pt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadReceipt(o)}
+                    disabled={generatingPdfId === o.id}
+                    className="text-[9px] font-mono uppercase font-bold px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-[#2C2224] hover:border-[#E88D9E] hover:text-[#E88D9E] transition disabled:opacity-50 cursor-pointer"
+                  >
+                    {generatingPdfId === o.id ? "Génération..." : "📄 Reçu PDF"}
+                  </button>
                   {nextAction && (
                     <button
                       type="button"

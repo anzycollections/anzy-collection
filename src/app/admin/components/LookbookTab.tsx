@@ -13,14 +13,25 @@ interface LookbookItem {
 export default function LookbookTab({ content, saveContent }: { content: any; saveContent: (c: any) => void }) {
   const [items, setItems] = useState<LookbookItem[]>(content?.lookbook || []);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { if (content?.lookbook) setItems(content.lookbook); }, [content?.lookbook]);
 
-  const save = () => {
-    saveContent({ ...content, lookbook: items });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const save = async () => {
+    setSaving(true);
+    setSaveError(false);
+    try {
+      await saveContent({ ...content, lookbook: items });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error(e);
+      setSaveError(true);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAddImage = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -305,6 +305,7 @@ export function StoreProvider({
     if (newContent.social) payload.social = newContent.social;
     if (newContent.categories) payload.categories = newContent.categories;
     if (newContent.shippingPrices) payload.shippingPrices = newContent.shippingPrices;
+    if (newContent.lookbook) payload.lookbook = newContent.lookbook;
 
     const res = await fetch("/api/content", {
       method: "POST",
