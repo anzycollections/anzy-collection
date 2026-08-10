@@ -53,7 +53,7 @@ export default function CheckoutPage() {
       .join("\n");
 
     const paymentText = checkout.paymentMethod === "mobile_money"
-      ? "Paiement : Mobile Money (justificatif transmis séparément — voir pièce jointe ci-dessous si besoin)"
+      ? "Paiement : Mobile Money — justificatif disponible dans l'onglet Commandes de l'admin (quelques secondes après l'envoi de ce message)"
       : `Transfert : ${checkout.transferService} (MTCN: ${checkout.mtcnCode})`;
 
     const message = `

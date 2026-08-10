@@ -24,6 +24,8 @@ export const DEFAULT_SHIPPING_PRICES: Record<string, number> = {
   "Sierra Leone": 50000,
   "Togo": 25000,
   "France": 15000,
+  "DHL Afrique de l'Ouest": 15000,
+  "DHL Europe": 15000,
 };
 
 export const SHIPPING_ZONES = [
@@ -77,6 +79,12 @@ export function getShippingOptionsForCountry(countryName: string, customPrices: 
   return foundZone.options.map(opt => {
     if (opt.id === "terrestre_ao") {
       return { ...opt, price: prices[countryName] ?? 50000 };
+    }
+    if (opt.id === "dhl_ao") {
+      return { ...opt, price: prices["DHL Afrique de l'Ouest"] ?? opt.price };
+    }
+    if (opt.id === "dhl_eu") {
+      return { ...opt, price: prices["DHL Europe"] ?? opt.price };
     }
     return opt;
   });

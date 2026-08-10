@@ -135,12 +135,7 @@ export default function ProductDrawer({
         onTouchEnd={handleTouchEnd}
       >
         {allImages.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setIsLightboxOpen(true)}
-            aria-label="Agrandir l'image"
-            className="absolute inset-0 w-full h-full cursor-zoom-in"
-          >
+          <>
             <Image
               src={allImages[activeImageIndex]}
               alt={`${product.name} - Vue ${activeImageIndex + 1}`}
@@ -149,7 +144,15 @@ export default function ProductDrawer({
               sizes="100vw"
               className="object-cover"
             />
-          </button>
+            <button
+              type="button"
+              onClick={() => setIsLightboxOpen(true)}
+              aria-label="Agrandir l'image"
+              className="absolute bottom-5 right-5 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-zoom-in active:scale-95 z-10"
+            >
+              ⤢
+            </button>
+          </>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 space-y-2">
             <span className="text-5xl">📷</span>

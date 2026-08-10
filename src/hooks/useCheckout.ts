@@ -13,7 +13,7 @@ const mtcnPatterns: Record<string, RegExp> = {
 
 export function useCheckout() {
   const { items, subtotal, totalPrice, country, selectedShipping, setSelectedShipping, clearCart } = useCart();
-  const { convertirPrix, symboleDevise } = useStore();
+  const { convertirPrix, symboleDevise, content } = useStore();
 
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "", address: "", city: "", comment: "",
