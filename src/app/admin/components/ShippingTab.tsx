@@ -1,13 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DEFAULT_SHIPPING_PRICES } from "@/data/shippingZones";
+
+// La colonne "shippingPrices" en base s'initialise à un objet vide {} (pas à
+// "rien du tout"), et {} est une valeur "vraie" en JavaScript — donc l'ancien
+// code pensait à tort qu'il y avait déjà des prix personnalisés, alors qu'il
+// n'y avait rien à afficher. Cette fonction distingue "vraiment vide" de
+// "a de vrais prix enregistrés".
+function resolvePrices(saved: any): Record<string, number> {
+  if (saved && typeof saved === "object" && Object.keys(saved).length > 0) {
+    return saved;
+  }
+  return DEFAULT_SHIPPING_PRICES;
+}
 
 export default function ShippingTab({ content, saveContent }: { content: any; saveContent: (c: any) => void }) {
   const [shippingForm, setShippingForm] = useState<Record<string, number>>(
-    content?.shippingPrices || DEFAULT_SHIPPING_PRICES
+    resolvePrices(content?.shippingPrices)
   );
   const [shippingSaved, setShippingSaved] = useState(false);
+
+  // Le contenu arrive parfois après le premier affichage (chargement en
+  // arrière-plan) : on se resynchronise dès qu'il est disponible.
+  useEffect(() => {
+    if (content?.shippingPrices && Object.keys(content.shippingPrices).length > 0) {
+      setShippingForm(content.shippingPrices);
+    }
+  }, [content?.shippingPrices]);
 
   const saveShipping = () => {
     saveContent({ ...content, shippingPrices: shippingForm });
