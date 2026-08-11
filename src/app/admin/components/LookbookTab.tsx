@@ -17,13 +17,22 @@ export default function LookbookTab({ content, saveContent }: { content: any; sa
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (content?.lookbook) setItems(content.lookbook); }, [content?.lookbook]);
+  useEffect(() => {
+    if (Array.isArray(content?.lookbook) && content.lookbook.length > 0) {
+      setItems(content.lookbook);
+    }
+  }, [content?.lookbook]);
 
   const save = async () => {
     setSaving(true);
     setSaveError(false);
     try {
-      await saveContent({ ...content, lookbook: items });
+      // On n'envoie QUE le lookbook, pas tout `content` — la route sait déjà
+      // conserver le reste (Hero, À propos...) inchangé. Ça évite de traîner
+      // à chaque sauvegarde des images Hero potentiellement volumineuses
+      // (stockées en texte brut) qui pourraient à elles seules dépasser la
+      // limite de taille de requête.
+      await saveContent({ lookbook: items } as any);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
@@ -34,25 +43,43 @@ export default function LookbookTab({ content, saveContent }: { content: any; sa
     }
   };
 
-  const handleAddImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploading, setUploading] = useState(false);
+
+  const handleAddImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     if (items.length + files.length > 6) {
       alert("Maximum 6 bannières pour garder une section lisible.");
       return;
     }
-    let loaded = 0;
-    const newItems: LookbookItem[] = [];
-    Array.from(files).forEach((f) => {
-      const r = new FileReader();
-      r.onloadend = () => {
-        newItems.push({ id: `lb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, imageUrl: r.result as string, title: "", subtitle: "", link: "" });
-        loaded++;
-        if (loaded === files.length) setItems((prev) => [...prev, ...newItems]);
-      };
-      r.readAsDataURL(f);
-    });
-    if (fileRef.current) fileRef.current.value = "";
+
+    setUploading(true);
+    setSaveError(false);
+    try {
+      const uploaded: LookbookItem[] = [];
+      for (const file of Array.from(files)) {
+        const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+          method: "POST",
+          body: file,
+        });
+        if (!res.ok) throw new Error("Échec de l'upload d'une image");
+        const blob = await res.json();
+        uploaded.push({
+          id: `lb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          imageUrl: blob.url,
+          title: "",
+          subtitle: "",
+          link: "",
+        });
+      }
+      setItems((prev) => [...prev, ...uploaded]);
+    } catch (e) {
+      console.error(e);
+      setSaveError(true);
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const updateItem = (id: string, fields: Partial<LookbookItem>) => {
@@ -89,10 +116,10 @@ export default function LookbookTab({ content, saveContent }: { content: any; sa
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          disabled={items.length >= 6}
+          disabled={items.length >= 6 || uploading}
           className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-300 hover:border-[#E88D9E] bg-[#FAF7F5] transition flex items-center justify-center gap-2 text-gray-400 text-xs font-mono uppercase tracking-widest cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          + Ajouter une image ({items.length}/6)
+          {uploading ? "Envoi en cours..." : `+ Ajouter une image (${items.length}/6)`}
         </button>
       </div>
 
@@ -162,13 +189,20 @@ export default function LookbookTab({ content, saveContent }: { content: any; sa
         )}
       </div>
 
+      {saveError && (
+        <p className="text-[11px] font-mono text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+          Une erreur est survenue (upload ou sauvegarde). Vérifie ta connexion et réessaie.
+        </p>
+      )}
+
       <button
         onClick={save}
-        className={`w-full py-4 rounded-2xl text-[11px] font-mono font-bold uppercase tracking-widest transition-all duration-300 shadow-md cursor-pointer ${
+        disabled={saving || uploading}
+        className={`w-full py-4 rounded-2xl text-[11px] font-mono font-bold uppercase tracking-widest transition-all duration-300 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
           saved ? "bg-green-600 text-white scale-102" : "bg-[#2C2224] text-white hover:bg-black"
         }`}
       >
-        {saved ? "✓ MODIFICATIONS ENREGISTRÉES" : "ENREGISTRER LE LOOKBOOK"}
+        {saving ? "Enregistrement..." : saved ? "✓ MODIFICATIONS ENREGISTRÉES" : "ENREGISTRER LE LOOKBOOK"}
       </button>
     </div>
   );

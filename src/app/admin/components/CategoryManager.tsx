@@ -1,17 +1,27 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useStore } from "@/context/StoreContext";
 import type { Category } from "@/context/StoreContext";
 
 export default function CategoryManager() {
-  const { content, saveContent } = useStore();
-  const categories: Category[] = (content as any)?.categories || [];
+  const { content, saveContent, categories: realCategories } = useStore();
+
+  // Affichage local pour un retour instantané au clic — la sauvegarde réseau
+  // peut prendre plusieurs secondes sur cette base, on ne fait pas attendre
+  // la bascule visuelle du bouton pour autant.
+  const [categories, setCategories] = useState<Category[]>(realCategories || []);
+
+  useEffect(() => {
+    setCategories(realCategories || []);
+  }, [realCategories]);
 
   const toggleCategoryVisibility = (id: string) => {
     const newCategories = categories.map((c) =>
       c.id === id ? { ...c, visible: !c.visible } : c
     );
-    saveContent({ ...content, categories: newCategories });
+    setCategories(newCategories); // bascule immédiate à l'écran
+    saveContent({ ...content, categories: newCategories }); // sauvegarde en arrière-plan
   };
 
   return (

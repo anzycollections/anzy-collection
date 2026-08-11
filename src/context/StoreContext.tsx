@@ -247,6 +247,7 @@ export function StoreProvider({
           about: dataContent.about || {},
           footer: dataContent.footer || {},
           social: dataContent.social || {},
+          lookbook: dataContent.lookbook || [],
           shippingPrices: dataContent.shippingPrices || DEFAULT_SHIPPING_PRICES,
         });
       }
