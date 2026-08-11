@@ -38,7 +38,7 @@ export function useCheckout() {
 
   useEffect(() => {
     if (isOther && finalCountry) {
-      const opts = getShippingOptionsForCountry(finalCountry);
+      const opts = getShippingOptionsForCountry(finalCountry, content?.shippingPrices);
       if (opts.length === 0) {
         setLocalShippingOptions([{
           id: "dhl_international",

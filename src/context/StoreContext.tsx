@@ -221,7 +221,7 @@ export function StoreProvider({
       setLoading(true);
       const [resProd, resContent] = await Promise.all([
         fetch("/api/products"),
-        fetch("/api/content"),
+        fetch("/api/content", { cache: "no-store" }),
       ]);
 
       if (resProd.ok) {

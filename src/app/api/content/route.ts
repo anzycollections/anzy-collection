@@ -3,6 +3,13 @@ import { db } from "@/db";
 import { siteContent, categories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+// Cette route sert du contenu modifié fréquemment depuis l'admin (livraison,
+// lookbook, etc.) — elle ne doit jamais être mise en cache par Next.js,
+// sinon une sauvegarde peut sembler "ne pas s'appliquer" alors qu'elle a
+// pourtant bien réussi côté base de données.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // GET /api/content : Récupère la config (hero, about, footer, social) + les catégories
 export async function GET() {
   try {

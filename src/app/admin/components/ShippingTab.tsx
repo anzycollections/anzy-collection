@@ -3,16 +3,19 @@
 import { useState, useEffect } from "react";
 import { DEFAULT_SHIPPING_PRICES } from "@/data/shippingZones";
 
-// La colonne "shippingPrices" en base s'initialise à un objet vide {} (pas à
-// "rien du tout"), et {} est une valeur "vraie" en JavaScript — donc l'ancien
-// code pensait à tort qu'il y avait déjà des prix personnalisés, alors qu'il
-// n'y avait rien à afficher. Cette fonction distingue "vraiment vide" de
-// "a de vrais prix enregistrés".
+// Fusionne les prix déjà enregistrés avec la structure actuelle des tarifs :
+// - un pays/mode déjà réglé garde sa valeur ;
+// - un nouveau champ (ex: DHL International) apparaît avec sa valeur par défaut ;
+// - un champ obsolète qui n'existe plus dans le code (ex: un ancien "DHL Europe")
+//   disparaît automatiquement au lieu de rester affiché comme un champ fantôme.
 function resolvePrices(saved: any): Record<string, number> {
-  if (saved && typeof saved === "object" && Object.keys(saved).length > 0) {
-    return saved;
+  const merged = { ...DEFAULT_SHIPPING_PRICES };
+  if (saved && typeof saved === "object") {
+    for (const key of Object.keys(merged)) {
+      if (typeof saved[key] === "number") merged[key] = saved[key];
+    }
   }
-  return DEFAULT_SHIPPING_PRICES;
+  return merged;
 }
 
 export default function ShippingTab({ content, saveContent }: { content: any; saveContent: (c: any) => void }) {
@@ -25,7 +28,7 @@ export default function ShippingTab({ content, saveContent }: { content: any; sa
   // arrière-plan) : on se resynchronise dès qu'il est disponible.
   useEffect(() => {
     if (content?.shippingPrices && Object.keys(content.shippingPrices).length > 0) {
-      setShippingForm(content.shippingPrices);
+      setShippingForm(resolvePrices(content.shippingPrices));
     }
   }, [content?.shippingPrices]);
 
