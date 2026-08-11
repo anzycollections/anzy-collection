@@ -3,6 +3,13 @@ import { db } from "@/db";
 import { siteContent, categories } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+// Cette route sert du contenu modifié fréquemment depuis l'admin (livraison,
+// lookbook, etc.) — elle ne doit jamais être mise en cache par Next.js,
+// sinon une sauvegarde peut sembler "ne pas s'appliquer" alors qu'elle a
+// pourtant bien réussi côté base de données.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // GET /api/content : Récupère la config (hero, about, footer, social) + les catégories
 export async function GET() {
   try {
@@ -44,7 +51,7 @@ export async function POST(request: Request) {
 
     // 2. Sauvegarde du contenu (hero / about / footer / social) seulement si fourni,
     // pour ne jamais écraser une section avec un objet vide par erreur.
-    const hasSiteContentFields = body.hero || body.about || body.footer || body.social || body.lookbook;
+    const hasSiteContentFields = body.hero || body.about || body.footer || body.social || body.lookbook || body.shippingPrices;
     if (hasSiteContentFields) {
       const existing = await db
         .select()
@@ -59,6 +66,7 @@ export async function POST(request: Request) {
         footer: body.footer ?? current?.footer ?? {},
         social: body.social ?? current?.social ?? {},
         lookbook: body.lookbook ?? current?.lookbook ?? [],
+        shippingPrices: body.shippingPrices ?? current?.shippingPrices ?? {},
       };
 
       await db

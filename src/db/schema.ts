@@ -49,6 +49,7 @@ export const siteContent = pgTable("site_content", {
     subtitle?: string;
     link?: string;
   }[]>().default([]),
+  shippingPrices: jsonb("shipping_prices").$type<Record<string, number>>().default({}),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

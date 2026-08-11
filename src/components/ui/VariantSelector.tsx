@@ -17,18 +17,51 @@ const colorMap: Record<string, string> = {
   "A": "#E2C3AF", // Teinte claire
   "B": "#B9856A", // Teinte moyenne
   "C": "#845A48", // Teinte foncée
-  noir: "#1a1a1a", blanc: "#ffffff", beige: "#e8dcc8",
-  rose: "#e88d9e", rouge: "#c0392b", bordeaux: "#6d2130",
-  bleu: "#2c4a7c", marine: "#1b2a4a", "bleu marine": "#1b2a4a",
-  vert: "#3f6b4f", kaki: "#6b6b47", jaune: "#e8c547",
-  orange: "#d9772e", gris: "#8c8c8c", anthracite: "#3a3a3a",
-  marron: "#6b4226", camel: "#c19a6b", taupe: "#8b7d6b",
-  violet: "#6c3483", doré: "#c9a635", argenté: "#c0c0c0",
-  nude: "#e3bfa5", crème: "#f2e9dc", ivoire: "#f5f0e6",
+  noir: "#1a1a1a", ébène: "#0d0d0d",
+  blanc: "#ffffff", ivoire: "#f5f0e6", crème: "#f2e9dc", écru: "#f0e6d2",
+  beige: "#e8dcc8", sable: "#e0c9a6", nude: "#e3bfa5",
+  rose: "#e88d9e", fuchsia: "#c2185b", magenta: "#c71585",
+  rouge: "#c0392b", bordeaux: "#6d2130", corail: "#e5674c", brique: "#a13d2b",
+  bleu: "#2c4a7c", marine: "#1b2a4a", ciel: "#a9cce3", turquoise: "#1abc9c", indigo: "#3f3d9e",
+  vert: "#3f6b4f", kaki: "#6b6b47", olive: "#6b6b47", émeraude: "#046307", menthe: "#98d8c8",
+  jaune: "#e8c547", moutarde: "#c9a227", citron: "#f4e04d",
+  orange: "#d9772e", abricot: "#e8a55c",
+  gris: "#8c8c8c", anthracite: "#3a3a3a", argenté: "#c0c0c0", argent: "#c0c0c0", perle: "#e6e2df",
+  marron: "#6b4226", chocolat: "#4a2c17", camel: "#c19a6b", cognac: "#9a463d", taupe: "#8b7d6b", caramel: "#af6f3e",
+  violet: "#6c3483", mauve: "#b39ddb", lilas: "#c8a2c8", prune: "#5b2333",
+  doré: "#c9a635", or: "#c9a635", bronze: "#8c6a3f", cuivre: "#b56a3c",
 };
 
+// Retire les accents pour une comparaison plus tolérante (ex: "dore" trouve "doré").
+function normalize(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+const normalizedColorMap: Record<string, string> = Object.fromEntries(
+  Object.entries(colorMap).map(([k, v]) => [normalize(k), v])
+);
+
 function getSwatchColor(label: string): string | null {
-  return colorMap[label] || colorMap[label.trim().toLowerCase()] || null;
+  if (colorMap[label]) return colorMap[label]; // codes A/B/C exacts, sensibles à la casse
+  const norm = normalize(label);
+  if (normalizedColorMap[norm]) return normalizedColorMap[norm];
+  // Correspondance partielle : "Rouge vif", "Bleu clair", "Vert foncé" contiennent un mot-clé connu.
+  const found = Object.keys(normalizedColorMap).find((key) => norm.includes(key));
+  return found ? normalizedColorMap[found] : null;
+}
+
+// Libellé fiable d'une variante : utilise name/title s'ils existent, sinon
+// reconstruit un libellé lisible à partir de combo (généré par le nouveau
+// système "Options & pré-tarification" de l'admin). C'est ce qui manquait
+// et causait l'affichage générique "Option" au lieu du vrai nom.
+function getVarianteLabel(v: any): string {
+  if (v.name) return v.name;
+  if (v.title) return v.title;
+  if (v.combo) {
+    const vals = Object.values(v.combo).map((val: any) => String(val));
+    if (vals.length > 0) return vals.join(" / ");
+  }
+  return "Option";
 }
 
 export default function VariantSelector({
@@ -121,7 +154,7 @@ export default function VariantSelector({
         </span>
         <div className="flex flex-wrap items-center gap-3">
           {variantes.map((v: any) => {
-            const label = v.name || v.title || "Option";
+            const label = getVarianteLabel(v);
             const isSelected = selectedVariante?.id === v.id;
             const disabled = (v.stock ?? 0) === 0;
             const bgColor = colorMap[label] || getSwatchColor(label);

@@ -23,7 +23,8 @@ export const DEFAULT_SHIPPING_PRICES: Record<string, number> = {
   "Sénégal": 65000,
   "Sierra Leone": 50000,
   "Togo": 25000,
-  "France": 15000,
+  "DHL Afrique de l'Ouest": 15000,
+  "DHL International": 25000,
 };
 
 export const SHIPPING_ZONES = [
@@ -52,13 +53,6 @@ export const SHIPPING_ZONES = [
       { id: "terrestre_ao", name: "Transport Terrestre", price: 0, insured: false, description: "Tarif calculé selon la distance" },
     ],
   },
-  {
-    name: "Europe",
-    countries: ["France", "Belgique", "Suisse", "Allemagne", "Italie", "Espagne", "Portugal", "Royaume-Uni"],
-    options: [
-      { id: "dhl_eu", name: "DHL Express Europe (Assuré)", price: 15000, insured: true, description: "Livraison express prioritaire" },
-    ],
-  },
 ];
 
 export function getShippingOptionsForCountry(countryName: string, customPrices: Record<string, number> = DEFAULT_SHIPPING_PRICES): ShippingOption[] {
@@ -72,11 +66,16 @@ export function getShippingOptionsForCountry(countryName: string, customPrices: 
     zone.countries.map(c => c.toLowerCase()).includes(countryName.toLowerCase())
   );
 
-  if (!foundZone) return [{ id: "dhl_other", name: "DHL International", price: 25000, insured: true, description: "Livraison internationale" }];
+  if (!foundZone) {
+    return [{ id: "dhl_other", name: "DHL International", price: prices["DHL International"] ?? 25000, insured: true, description: "Livraison internationale" }];
+  }
 
   return foundZone.options.map(opt => {
     if (opt.id === "terrestre_ao") {
       return { ...opt, price: prices[countryName] ?? 50000 };
+    }
+    if (opt.id === "dhl_ao") {
+      return { ...opt, price: prices["DHL Afrique de l'Ouest"] ?? opt.price };
     }
     return opt;
   });

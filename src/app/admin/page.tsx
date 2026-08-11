@@ -24,6 +24,7 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showTabMenu, setShowTabMenu] = useState(false);
 
   // Protection : On attend que le contenu soit chargé au moins une fois
   useEffect(() => {
@@ -121,24 +122,43 @@ export default function AdminPage() {
           </a>
         </div>
 
-        <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-200/60">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as Tab)}
-                className={`px-5 py-3 rounded-2xl text-[10px] font-mono tracking-[0.15em] uppercase whitespace-nowrap transition-all duration-200 border flex items-center gap-2 cursor-pointer ${
-                  isActive
-                    ? "bg-[#2C2224] text-white border-[#2C2224] shadow-md font-bold"
-                    : "bg-white/80 text-gray-500 border-gray-200/80 hover:border-[#E88D9E] hover:text-[#2C2224]"
-                }`}
-              >
-                <span className={`text-[9px] ${isActive ? "text-[#E88D9E]" : "text-gray-400"}`}>{tab.code}</span>
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowTabMenu(!showTabMenu)}
+            className="w-full sm:w-auto flex items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-[#2C2224] text-white text-[10px] font-mono tracking-[0.15em] uppercase font-bold shadow-md cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <span className="text-[#E88D9E]">{tabs.find((t) => t.id === activeTab)?.code}</span>
+              <span>{tabs.find((t) => t.id === activeTab)?.label}</span>
+            </span>
+            <span className={`text-xs transition-transform duration-200 ${showTabMenu ? "rotate-180" : ""}`}>▾</span>
+          </button>
+
+          {showTabMenu && (
+            <>
+              {/* Voile pour fermer le menu au clic à l'extérieur */}
+              <div className="fixed inset-0 z-30" onClick={() => setShowTabMenu(false)} />
+              <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white rounded-2xl border border-gray-100 shadow-xl z-40 overflow-hidden py-2">
+                {tabs.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => { setActiveTab(tab.id as Tab); setShowTabMenu(false); }}
+                      className={`w-full flex items-center gap-3 px-5 py-2.5 text-[10px] font-mono tracking-[0.15em] uppercase text-left transition cursor-pointer ${
+                        isActive ? "bg-[#FAF7F5] text-[#2C2224] font-bold" : "text-gray-500 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className={isActive ? "text-[#E88D9E]" : "text-gray-300"}>{tab.code}</span>
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         {activeTab === "products" && (

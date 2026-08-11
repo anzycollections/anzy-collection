@@ -50,7 +50,10 @@ export async function getInitialStoreData(): Promise<{
         footer: (config?.footer as StoreContent["footer"]) || {},
         social: (config?.social as StoreContent["social"]) || {},
         lookbook: (config?.lookbook as StoreContent["lookbook"]) || [],
-        shippingPrices: DEFAULT_SHIPPING_PRICES,
+        shippingPrices:
+          config?.shippingPrices && Object.keys(config.shippingPrices).length > 0
+            ? (config.shippingPrices as Record<string, number>)
+            : DEFAULT_SHIPPING_PRICES,
       },
     };
   } catch (error) {

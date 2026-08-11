@@ -221,7 +221,7 @@ export function StoreProvider({
       setLoading(true);
       const [resProd, resContent] = await Promise.all([
         fetch("/api/products"),
-        fetch("/api/content"),
+        fetch("/api/content", { cache: "no-store" }),
       ]);
 
       if (resProd.ok) {
@@ -247,6 +247,7 @@ export function StoreProvider({
           about: dataContent.about || {},
           footer: dataContent.footer || {},
           social: dataContent.social || {},
+          lookbook: dataContent.lookbook || [],
           shippingPrices: dataContent.shippingPrices || DEFAULT_SHIPPING_PRICES,
         });
       }
@@ -305,6 +306,7 @@ export function StoreProvider({
     if (newContent.social) payload.social = newContent.social;
     if (newContent.categories) payload.categories = newContent.categories;
     if (newContent.shippingPrices) payload.shippingPrices = newContent.shippingPrices;
+    if (newContent.lookbook) payload.lookbook = newContent.lookbook;
 
     const res = await fetch("/api/content", {
       method: "POST",

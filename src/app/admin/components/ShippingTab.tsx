@@ -1,13 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DEFAULT_SHIPPING_PRICES } from "@/data/shippingZones";
+
+// Fusionne les prix déjà enregistrés avec la structure actuelle des tarifs :
+// - un pays/mode déjà réglé garde sa valeur ;
+// - un nouveau champ (ex: DHL International) apparaît avec sa valeur par défaut ;
+// - un champ obsolète qui n'existe plus dans le code (ex: un ancien "DHL Europe")
+//   disparaît automatiquement au lieu de rester affiché comme un champ fantôme.
+function resolvePrices(saved: any): Record<string, number> {
+  const merged = { ...DEFAULT_SHIPPING_PRICES };
+  if (saved && typeof saved === "object") {
+    for (const key of Object.keys(merged)) {
+      if (typeof saved[key] === "number") merged[key] = saved[key];
+    }
+  }
+  return merged;
+}
 
 export default function ShippingTab({ content, saveContent }: { content: any; saveContent: (c: any) => void }) {
   const [shippingForm, setShippingForm] = useState<Record<string, number>>(
-    content?.shippingPrices || DEFAULT_SHIPPING_PRICES
+    resolvePrices(content?.shippingPrices)
   );
   const [shippingSaved, setShippingSaved] = useState(false);
+
+  // Le contenu arrive parfois après le premier affichage (chargement en
+  // arrière-plan) : on se resynchronise dès qu'il est disponible.
+  useEffect(() => {
+    if (content?.shippingPrices && Object.keys(content.shippingPrices).length > 0) {
+      setShippingForm(resolvePrices(content.shippingPrices));
+    }
+  }, [content?.shippingPrices]);
 
   const saveShipping = () => {
     saveContent({ ...content, shippingPrices: shippingForm });

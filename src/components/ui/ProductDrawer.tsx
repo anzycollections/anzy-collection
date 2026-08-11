@@ -41,6 +41,7 @@ export default function ProductDrawer({
   );
   const [quantity, setQuantity] = useState(initialQuantity);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
@@ -134,14 +135,24 @@ export default function ProductDrawer({
         onTouchEnd={handleTouchEnd}
       >
         {allImages.length > 0 ? (
-          <Image
-            src={allImages[activeImageIndex]}
-            alt={`${product.name} - Vue ${activeImageIndex + 1}`}
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
+          <>
+            <Image
+              src={allImages[activeImageIndex]}
+              alt={`${product.name} - Vue ${activeImageIndex + 1}`}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => setIsLightboxOpen(true)}
+              aria-label="Agrandir l'image"
+              className="absolute bottom-5 right-5 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-zoom-in active:scale-95 z-10"
+            >
+              ⤢
+            </button>
+          </>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 space-y-2">
             <span className="text-5xl">📷</span>
@@ -354,6 +365,49 @@ export default function ProductDrawer({
           <span className="font-mono text-[11px] text-[#E88D9E] group-hover:text-white transition-colors">{priceFormatted} {symboleDevise}</span>
         </button>
       </div>
+
+      {/* VISIONNEUSE PLEIN ÉCRAN — image entière visible, non recadrée */}
+      {isLightboxOpen && allImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setIsLightboxOpen(false)}
+            aria-label="Fermer"
+            className="absolute top-6 right-5 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition cursor-pointer z-10"
+          >
+            ✕
+          </button>
+          <div className="relative w-full h-full max-w-3xl mx-auto" onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={allImages[activeImageIndex]}
+              alt={`${product.name} - Vue ${activeImageIndex + 1}`}
+              fill
+              sizes="100vw"
+              className="object-contain"
+            />
+          </div>
+          {allImages.length > 1 && (
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {allImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setActiveImageIndex(idx); }}
+                  aria-label={`Voir l'image ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    idx === activeImageIndex ? "w-6 bg-white" : "w-1.5 bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
