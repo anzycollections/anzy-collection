@@ -7,6 +7,7 @@ interface VariantSelectorProps {
   selectedVariante: any;
   onSelectVariante: (v: any) => void;
   currency?: string;
+  productOptions?: { name: string; values: string[]; colorMap?: Record<string, string> }[];
 }
 
 // Dictionnaire associant le nom du modèle à une couleur HEX.
@@ -69,9 +70,25 @@ export default function VariantSelector({
   selectedVariante,
   onSelectVariante,
   currency = "XOF",
+  productOptions,
 }: VariantSelectorProps) {
   const [selectedWeight, setSelectedWeight] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("");
+
+  // Couleur exacte choisie par la vendeuse dans l'admin pour cette valeur précise
+  // (ex: "Rouge" -> "#c0392b" tel qu'elle l'a réellement sélectionné), prioritaire
+  // sur la devinette par dictionnaire ci-dessous. Si rien n'a été choisi pour
+  // cette valeur, on retombe automatiquement sur la devinette — donc les anciens
+  // produits jamais mis à jour continuent de s'afficher comme avant.
+  const getExactColor = (value: string): string | null => {
+    if (!productOptions) return null;
+    for (const opt of productOptions) {
+      if (opt.colorMap && opt.colorMap[value]) return opt.colorMap[value];
+    }
+    return null;
+  };
+
+  const resolveColor = (value: string): string | null => getExactColor(value) || getSwatchColor(value);
 
   const { weights, models, isComplex } = useMemo(() => {
     const w = new Set<string>();
@@ -150,14 +167,14 @@ export default function VariantSelector({
     return (
       <div className="space-y-3">
         <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
-          {variantes.some((v) => getSwatchColor(v.name || v.title || "")) ? "Couleur" : "Choix de la variante"}
+          {variantes.some((v) => resolveColor(v.name || v.title || "")) ? "Couleur" : "Choix de la variante"}
         </span>
         <div className="flex flex-wrap items-center gap-3">
           {variantes.map((v: any) => {
             const label = getVarianteLabel(v);
             const isSelected = selectedVariante?.id === v.id;
             const disabled = (v.stock ?? 0) === 0;
-            const bgColor = colorMap[label] || getSwatchColor(label);
+            const bgColor = resolveColor(label);
 
             if (bgColor) {
               return (
@@ -249,7 +266,7 @@ export default function VariantSelector({
           <div className="flex flex-wrap gap-3">
             {models.map((m) => {
               // Récupération de la couleur depuis le dictionnaire. Si elle n'existe pas, on met un gris par défaut.
-              const bgColor = colorMap[m] || getSwatchColor(m) || "#E5E7EB";
+              const bgColor = resolveColor(m) || "#E5E7EB";
               const isSelected = m === selectedModel;
 
               // Stock de la combinaison (poids sélectionné + ce modèle), pour griser/barrer si en rupture.

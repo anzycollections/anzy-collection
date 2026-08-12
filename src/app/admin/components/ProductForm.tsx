@@ -133,6 +133,15 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
     const opts = [...form.options]; opts[optIdx].values.splice(valIdx, 1); setForm((prev) => ({ ...prev, options: opts }));
   };
 
+  // Assigne une couleur exacte (hex) à une valeur d'option — ex: "Rouge" -> "#c0392b".
+  // Stockée sur le produit lui-même, réutilisée par le tiroir produit pour afficher
+  // le vrai swatch au lieu de deviner une couleur approximative à partir du nom.
+  const setValueColor = (optIdx: number, val: string, hex: string) => {
+    const opts = [...form.options];
+    opts[optIdx] = { ...opts[optIdx], colorMap: { ...(opts[optIdx].colorMap || {}), [val]: hex } };
+    setForm((prev) => ({ ...prev, options: opts }));
+  };
+
   const setOptionDefaultValue = (optName: string, val: string, field: "price" | "stock", amount: number) => {
     setOptionDefaults((prev) => ({ ...prev, [`${optName}-${val}-${field}`]: amount }));
   };
@@ -303,6 +312,7 @@ export default function ProductForm({ editingProduct, onSave }: Props) {
         addValue={addValue}
         removeValue={removeValue}
         setOptionDefaultValue={setOptionDefaultValue}
+        setValueColor={setValueColor}
         generateVariantes={generateVariantes}
       />
 

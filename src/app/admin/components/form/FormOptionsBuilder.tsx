@@ -10,6 +10,7 @@ interface FormOptionsBuilderProps {
   addValue: (optIdx: number, val: string) => void;
   removeValue: (optIdx: number, valIdx: number) => void;
   setOptionDefaultValue: (optName: string, val: string, field: "price" | "stock", amount: number) => void;
+  setValueColor: (optIdx: number, val: string, hex: string) => void;
   generateVariantes: (e?: React.MouseEvent) => void;
 }
 
@@ -21,6 +22,7 @@ export default function FormOptionsBuilder({
   addValue,
   removeValue,
   setOptionDefaultValue,
+  setValueColor,
   generateVariantes,
 }: FormOptionsBuilderProps) {
   const [newOptionName, setNewOptionName] = useState("");
@@ -79,7 +81,18 @@ export default function FormOptionsBuilder({
                 >
                   <div className="flex items-center justify-between w-full sm:w-auto">
                     <span className="text-xs font-bold text-[#2C2224] flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#E88D9E]" />
+                      <span
+                        className="relative w-4 h-4 rounded-full border border-gray-300 shrink-0 overflow-hidden cursor-pointer"
+                        style={{ backgroundColor: opt.colorMap?.[v] || "#e5e7eb" }}
+                        title="Choisir la couleur exacte de cette valeur"
+                      >
+                        <input
+                          type="color"
+                          value={opt.colorMap?.[v] || "#e5e7eb"}
+                          onChange={(e) => setValueColor(i, v, e.target.value)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </span>
                       {v}
                     </span>
                     <button

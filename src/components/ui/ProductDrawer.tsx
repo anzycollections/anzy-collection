@@ -260,6 +260,7 @@ export default function ProductDrawer({
             selectedVariante={selectedVariante}
             onSelectVariante={setSelectedVariante}
             currency={symboleDevise}
+            productOptions={product.options}
           />
         )}
 

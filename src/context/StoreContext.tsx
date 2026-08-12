@@ -12,6 +12,7 @@ export interface Category {
 export interface VarianteOption {
   name: string;
   values: string[];
+  colorMap?: Record<string, string>;
 }
 
 export interface VarianteCombi {

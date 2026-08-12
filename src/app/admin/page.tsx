@@ -64,9 +64,10 @@ export default function AdminPage() {
 
   const handleDuplicateProduct = async (product: Product) => {
     try {
-      // On enlève l'id existant pour que la base en génère un nouveau, et on
-      // masque la copie par défaut le temps de l'ajuster (nom, prix, stock...)
-      const { id, ...rest } = product as any;
+      // On enlève l'id et les champs générés par le serveur (createdAt) pour
+      // que la base en génère de nouveaux proprement, et on masque la copie
+      // par défaut le temps de l'ajuster (nom, prix, stock...)
+      const { id, createdAt, ...rest } = product as any;
       await addProduct({
         ...rest,
         name: `${product.name} (copie)`,
