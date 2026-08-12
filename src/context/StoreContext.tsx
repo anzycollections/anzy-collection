@@ -273,6 +273,24 @@ export function StoreProvider({
     return blob.url;
   };
 
+  // Rafraîchit uniquement la liste des produits (plus léger que refreshAll,
+  // qui recharge aussi tout le contenu du site inutilement pour ces actions).
+  const refreshProducts = async () => {
+    const resProd = await fetch("/api/products");
+    if (resProd.ok) {
+      const dataProd = await resProd.json();
+      if (Array.isArray(dataProd)) {
+        const formatted: Product[] = dataProd.map((p: any) => ({
+          ...p,
+          category: p.category ?? p.categoryId ?? "",
+          price: Number(p.price),
+          image: p.images?.[0] || p.image || "",
+        }));
+        setProducts(formatted);
+      }
+    }
+  };
+
   const addProduct = async (newProd: Partial<Product>) => {
     const res = await fetch("/api/products", {
       method: "POST",
@@ -280,23 +298,32 @@ export function StoreProvider({
       body: JSON.stringify(newProd),
     });
     if (!res.ok) throw new Error("Échec de la création du produit");
-    await refreshAll();
+    await refreshProducts();
   };
 
   const updateProduct = async (id: string, updatedFields: Partial<Product>) => {
+    // Bascule immédiate à l'écran (ex: masquer/afficher) — la sauvegarde
+    // réseau se fait ensuite en arrière-plan, sans faire attendre le clic.
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p)));
     const res = await fetch(`/api/products/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updatedFields),
     });
-    if (!res.ok) throw new Error("Échec de la mise à jour du produit");
-    await refreshAll();
+    if (!res.ok) {
+      await refreshProducts(); // en cas d'échec, on resynchronise avec la vraie valeur
+      throw new Error("Échec de la mise à jour du produit");
+    }
   };
 
   const deleteProduct = async (id: string) => {
+    const previous = products;
+    setProducts((prev) => prev.filter((p) => p.id !== id)); // retrait immédiat à l'écran
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Échec de la suppression du produit");
-    await refreshAll();
+    if (!res.ok) {
+      setProducts(previous); // en cas d'échec, on remet le produit
+      throw new Error("Échec de la suppression du produit");
+    }
   };
 
   const saveContent = async (newContent: StoreContent) => {

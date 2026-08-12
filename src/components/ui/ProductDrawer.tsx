@@ -46,14 +46,20 @@ export default function ProductDrawer({
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
 
-  // Défilement des images par balayage tactile (swipe)
+  // Un seul geste tactile gère les deux actions : un tap quasi immobile ouvre
+  // le zoom, un vrai glissement change de photo — pas besoin d'un bouton
+  // séparé pour zoomer, comme sur n'importe quelle appli photo actuelle.
   const touchStartX = useRef(0);
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
     const deltaX = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(deltaX) < 40) return; // balayage trop court, on ignore
+    if (Math.abs(deltaX) < 10) {
+      setIsLightboxOpen(true); // quasiment aucun déplacement = un tap → zoom
+      return;
+    }
+    if (Math.abs(deltaX) < 40) return; // déplacement ambigu, on ignore pour éviter les faux déclenchements
     if (deltaX < 0) {
       setActiveImageIndex((prev) => (prev + 1) % allImages.length);
     } else {
@@ -135,7 +141,10 @@ export default function ProductDrawer({
         onTouchEnd={handleTouchEnd}
       >
         {allImages.length > 0 ? (
-          <>
+          <div
+            onClick={() => setIsLightboxOpen(true)}
+            className="absolute inset-0 cursor-zoom-in"
+          >
             <Image
               src={allImages[activeImageIndex]}
               alt={`${product.name} - Vue ${activeImageIndex + 1}`}
@@ -144,15 +153,7 @@ export default function ProductDrawer({
               sizes="100vw"
               className="object-cover"
             />
-            <button
-              type="button"
-              onClick={() => setIsLightboxOpen(true)}
-              aria-label="Agrandir l'image"
-              className="absolute bottom-5 right-5 w-9 h-9 rounded-full bg-white/80 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-zoom-in active:scale-95 z-10"
-            >
-              ⤢
-            </button>
-          </>
+          </div>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 space-y-2">
             <span className="text-5xl">📷</span>

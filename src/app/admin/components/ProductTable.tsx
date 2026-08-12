@@ -29,6 +29,7 @@ export default function ProductTable({ products, onEdit, onDelete, onDuplicate, 
         <table className="w-full text-left border-collapse min-w-[500px]">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50 text-[9px] font-mono uppercase tracking-widest text-gray-400">
+              <th className="py-3 pl-4 sm:pl-6 pr-2 w-12"></th>
               <th className="py-3 px-4 sm:px-6">Produit</th>
               <th className="py-3 px-3 sm:px-6">Catégorie</th>
               <th className="py-3 px-3 sm:px-6">Prix</th>
@@ -41,6 +42,26 @@ export default function ProductTable({ products, onEdit, onDelete, onDuplicate, 
               const mainImg = p.images && p.images.length > 0 ? p.images[0] : null;
               return (
                 <tr key={p.id} className={`hover:bg-gray-50/50 transition ${p.visible === false ? "opacity-50" : ""}`}>
+                  <td className="py-3 pl-4 sm:pl-6 pr-2">
+                    {onToggleVisible && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleVisible(p)}
+                        role="switch"
+                        aria-checked={p.visible !== false}
+                        title={p.visible === false ? "Rendre visible" : "Masquer"}
+                        className={`relative w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer shrink-0 ${
+                          p.visible === false ? "bg-gray-300" : "bg-emerald-500"
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                            p.visible === false ? "translate-x-0" : "translate-x-4"
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </td>
                   <td className="py-3 px-4 sm:px-6">
                     <div className="flex items-center gap-2.5">
                       {mainImg ? (
@@ -97,16 +118,6 @@ export default function ProductTable({ products, onEdit, onDelete, onDuplicate, 
                           title="Dupliquer"
                         >
                           Dupliquer
-                        </button>
-                      )}
-                      {onToggleVisible && (
-                        <button
-                          type="button"
-                          onClick={() => onToggleVisible(p)}
-                          className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-gray-100 hover:bg-amber-500 hover:text-white text-[9px] sm:text-[10px] font-mono uppercase font-bold transition cursor-pointer"
-                          title={p.visible === false ? "Rendre visible" : "Masquer"}
-                        >
-                          {p.visible === false ? "Afficher" : "Masquer"}
                         </button>
                       )}
                       {onDelete && (
