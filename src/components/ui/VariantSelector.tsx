@@ -72,9 +72,6 @@ export default function VariantSelector({
   currency = "XOF",
   productOptions,
 }: VariantSelectorProps) {
-  const [selectedWeight, setSelectedWeight] = useState<string>("");
-  const [selectedModel, setSelectedModel] = useState<string>("");
-
   // Couleur exacte choisie par la vendeuse dans l'admin pour cette valeur précise
   // (ex: "Rouge" -> "#c0392b" tel qu'elle l'a réellement sélectionné), prioritaire
   // sur la devinette par dictionnaire ci-dessous. Si rien n'a été choisi pour
@@ -90,228 +87,175 @@ export default function VariantSelector({
 
   const resolveColor = (value: string): string | null => getExactColor(value) || getSwatchColor(value);
 
-  const { weights, models, isComplex } = useMemo(() => {
-    const w = new Set<string>();
-    const m = new Set<string>();
+  const hasCombo = variantes.some((v) => v.combo && Object.keys(v.combo).length > 0);
+  const hasLegacySeparator = variantes.some((v) => {
+    const l = v.name || v.title || "";
+    return l.includes(" - ") || l.includes(" / ") || l.includes(" – ");
+  });
 
-    variantes.forEach((v) => {
-      const label = v.name || v.title || "";
-      if (label.includes(" - ") || label.includes(" / ") || label.includes(" – ")) {
-        const sep = label.includes(" / ") ? " / " : (label.includes(" - ") ? " - " : " – ");
-        const [p, mo] = label.split(sep);
-        w.add(p.trim());
-        m.add(mo.trim());
-      } else if (v.combo) {
-        Object.values(v.combo).forEach((val: any) => {
-          const str = String(val);
-          if (str.toLowerCase().includes("kg") || !isNaN(Number(str))) w.add(str);
-          else m.add(str);
+  // Un "axe" = une vraie option nommée par la vendeuse (Couleur, Taille, Poids...).
+  // Chaque axe obtient sa propre section à l'écran, avec ses propres valeurs
+  // dédupliquées — au lieu de tout mélanger en devinant "poids vs modèle".
+  const axes = useMemo(() => {
+    if (hasCombo) {
+      const map: Record<string, Set<string>> = {};
+      const order: string[] = [];
+      variantes.forEach((v) => {
+        if (!v.combo) return;
+        Object.entries(v.combo).forEach(([key, val]) => {
+          if (!map[key]) { map[key] = new Set(); order.push(key); }
+          map[key].add(String(val));
         });
-      } else {
-        m.add(label);
-      }
-    });
-
-    return {
-      weights: Array.from(w),
-      models: Array.from(m),
-      isComplex: w.size > 0 && m.size > 0,
-    };
-  }, [variantes]);
-
-  useEffect(() => {
-    if (selectedVariante) {
-      const label = selectedVariante.name || selectedVariante.title || "";
-      if (isComplex) {
-        if (label.includes(" - ") || label.includes(" / ") || label.includes(" – ")) {
-          const sep = label.includes(" / ") ? " / " : (label.includes(" - ") ? " - " : " – ");
-          const [p, m] = label.split(sep);
-          setSelectedWeight(p.trim());
-          setSelectedModel(m.trim());
-        } else if (selectedVariante.combo) {
-          const vals = Object.values(selectedVariante.combo);
-          vals.forEach((v: any) => {
-            const str = String(v);
-            if (str.toLowerCase().includes("kg") || !isNaN(Number(str))) setSelectedWeight(str);
-            else setSelectedModel(str);
-          });
+      });
+      return order.map((key) => ({ key, values: Array.from(map[key]) }));
+    }
+    if (hasLegacySeparator) {
+      const w = new Set<string>();
+      const m = new Set<string>();
+      variantes.forEach((v) => {
+        const label = v.name || v.title || "";
+        const sep = label.includes(" / ") ? " / " : (label.includes(" - ") ? " - " : (label.includes(" – ") ? " – " : null));
+        if (sep) {
+          const [p, mo] = label.split(sep);
+          w.add(p.trim());
+          m.add(mo.trim());
         }
-      } else {
-        setSelectedModel(label);
+      });
+      return [
+        { key: "Poids", values: Array.from(w) },
+        { key: "Modèle", values: Array.from(m) },
+      ].filter((a) => a.values.length > 0);
+    }
+    // Système simple d'origine : une variante = une option directe (ex: juste des couleurs, sans deuxième critère).
+    return [{ key: "__flat__", values: variantes.map((v) => getVarianteLabel(v)) }];
+  }, [variantes, hasCombo, hasLegacySeparator]);
+
+  const [selected, setSelected] = useState<Record<string, string>>({});
+
+  const findMatchingVariante = (sel: Record<string, string>) => {
+    if (axes.length === 1 && axes[0].key === "__flat__") {
+      return variantes.find((v) => getVarianteLabel(v) === sel.__flat__);
+    }
+    if (hasCombo) {
+      return variantes.find(
+        (v) => v.combo && axes.every((ax) => sel[ax.key] === undefined || String(v.combo[ax.key]) === sel[ax.key])
+      );
+    }
+    return variantes.find((v) => {
+      const label = v.name || v.title || "";
+      return (sel["Poids"] === undefined || label.includes(sel["Poids"])) &&
+             (sel["Modèle"] === undefined || label.includes(sel["Modèle"]));
+    });
+  };
+
+  // Resynchronise la sélection locale quand le tiroir s'ouvre sur une variante précise
+  // (ex: on modifie un article déjà dans le panier).
+  useEffect(() => {
+    if (!selectedVariante) return;
+    if (axes.length === 1 && axes[0].key === "__flat__") {
+      setSelected({ __flat__: getVarianteLabel(selectedVariante) });
+    } else if (hasCombo && selectedVariante.combo) {
+      const next: Record<string, string> = {};
+      axes.forEach((ax) => {
+        if (selectedVariante.combo[ax.key] !== undefined) next[ax.key] = String(selectedVariante.combo[ax.key]);
+      });
+      setSelected(next);
+    } else {
+      const label = selectedVariante.name || selectedVariante.title || "";
+      const sep = label.includes(" / ") ? " / " : (label.includes(" - ") ? " - " : (label.includes(" – ") ? " – " : null));
+      if (sep) {
+        const [p, m] = label.split(sep);
+        setSelected({ "Poids": p.trim(), "Modèle": m.trim() });
       }
     }
-  }, [selectedVariante, isComplex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedVariante?.id]);
 
+  // Dès que la sélection locale change (clic sur un swatch), on cherche la variante
+  // correspondante et on prévient le parent si elle a changé.
   useEffect(() => {
-    if (!isComplex) return;
-
-    const found = variantes.find((v) => {
-      const label = v.name || v.title || "";
-      if (label && label.includes(selectedWeight) && label.includes(selectedModel)) return true;
-      
-      if (v.combo) {
-        const comboValues = Object.values(v.combo).map(val => String(val));
-        if (comboValues.includes(selectedWeight) && comboValues.includes(selectedModel)) {
-          return true;
-        }
-      }
-      return false;
-    });
-
+    const found = findMatchingVariante(selected);
     if (found && found.id !== selectedVariante?.id) {
       onSelectVariante(found);
     }
-  }, [selectedWeight, selectedModel, variantes, isComplex, selectedVariante, onSelectVariante]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
 
-  if (!isComplex) {
-    return (
-      <div className="space-y-3">
-        <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
-          {variantes.some((v) => resolveColor(v.name || v.title || "")) ? "Couleur" : "Choix de la variante"}
-        </span>
-        <div className="flex flex-wrap items-center gap-3">
-          {variantes.map((v: any) => {
-            const label = getVarianteLabel(v);
-            const isSelected = selectedVariante?.id === v.id;
-            const disabled = (v.stock ?? 0) === 0;
-            const bgColor = resolveColor(label);
-
-            if (bgColor) {
-              return (
-                <button
-                  key={v.id || label}
-                  type="button"
-                  onClick={() => onSelectVariante(v)}
-                  disabled={disabled}
-                  title={label}
-                  className={`relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 focus:outline-none
-                    ${isSelected ? "ring-[1.5px] ring-offset-2 ring-[#2C2224] scale-110 shadow-sm" : "ring-1 ring-gray-200/50 hover:ring-gray-300 hover:scale-105"}
-                    ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
-                  `}
-                  style={{ backgroundColor: bgColor }}
-                >
-                  {disabled && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-full h-px bg-red-500 rotate-45" />
-                    </span>
-                  )}
-                  {!disabled && v.stock <= 3 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
-                      {v.stock}
-                    </span>
-                  )}
-                </button>
-              );
-            }
-
-            return (
-              <button
-                key={v.id || label}
-                type="button"
-                onClick={() => onSelectVariante(v)}
-                disabled={disabled}
-                className={`relative px-5 py-3 rounded-2xl text-[11px] font-mono transition-all duration-200 border
-                  ${isSelected
-                    ? "bg-[#2C2224] text-white border-[#2C2224] shadow-md scale-105"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:shadow-sm"
-                  }
-                  ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-                `}
-              >
-                {label}
-                {!disabled && v.stock <= 3 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                    {v.stock}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+  const renderAxisLabel = (key: string) => (key === "__flat__" ? "Choix de la variante" : key);
 
   return (
     <div className="space-y-6">
-      {weights.length > 0 && (
-        <div className="space-y-2.5">
-          <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
-            Poids
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {weights.map((w) => (
-              <button
-                key={w}
-                type="button"
-                onClick={() => setSelectedWeight(w)}
-                className={`px-5 py-2.5 rounded-2xl text-[11px] font-mono transition-all duration-200 border cursor-pointer
-                  ${w === selectedWeight
-                    ? "bg-[#2C2224] text-white border-[#2C2224] shadow-md"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
-                  }`}
-              >
-                {w}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {axes.map((axis) => {
+        const isColorAxis = axis.values.some((v) => resolveColor(v));
+        return (
+          <div key={axis.key} className="space-y-2.5">
+            <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
+              {isColorAxis ? (axis.key === "__flat__" ? "Couleur" : axis.key) : renderAxisLabel(axis.key)}
+            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              {axis.values.map((value) => {
+                const bgColor = resolveColor(value);
+                const isSelected = selected[axis.key] === value;
+                // Variante qui résulterait de ce choix (les autres axes restant tels quels), pour le stock.
+                const candidate = findMatchingVariante({ ...selected, [axis.key]: value });
+                const stock = candidate?.stock;
+                const disabled = candidate ? (candidate.stock ?? 0) === 0 : false;
 
-      {models.length > 0 && (
-        <div className="space-y-2.5">
-          <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
-            Modèle / Couleur
-          </span>
-          <div className="flex flex-wrap gap-3">
-            {models.map((m) => {
-              // Récupération de la couleur depuis le dictionnaire. Si elle n'existe pas, on met un gris par défaut.
-              const bgColor = resolveColor(m) || "#E5E7EB";
-              const isSelected = m === selectedModel;
-
-              // Stock de la combinaison (poids sélectionné + ce modèle), pour griser/barrer si en rupture.
-              const matchingVariante = variantes.find((v) => {
-                const label = v.name || v.title || "";
-                if (label.includes(selectedWeight) && label.includes(m)) return true;
-                if (v.combo) {
-                  const vals = Object.values(v.combo).map((val) => String(val));
-                  return vals.includes(selectedWeight) && vals.includes(m);
+                if (bgColor) {
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSelected((prev) => ({ ...prev, [axis.key]: value }))}
+                      disabled={disabled}
+                      title={value}
+                      className={`relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 focus:outline-none
+                        ${isSelected ? "ring-[1.5px] ring-offset-2 ring-[#2C2224] scale-110 shadow-sm" : "ring-1 ring-gray-200/50 hover:ring-gray-300 hover:scale-105"}
+                        ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
+                      `}
+                      style={{ backgroundColor: bgColor }}
+                    >
+                      {disabled && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className="w-full h-px bg-red-500 rotate-45" />
+                        </span>
+                      )}
+                      {!disabled && typeof stock === "number" && stock <= 3 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                          {stock}
+                        </span>
+                      )}
+                    </button>
+                  );
                 }
-                return false;
-              });
-              const stock = matchingVariante?.stock;
-              const outOfStock = matchingVariante && stock === 0;
 
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setSelectedModel(m)}
-                  disabled={outOfStock}
-                  // Le style Tailwind ci-dessous crée l'effet "Swatch" parfait (rond coloré, anneau extérieur si sélectionné)
-                  className={`relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 focus:outline-none
-                    ${isSelected ? "ring-[1.5px] ring-offset-2 ring-[#2C2224] scale-110 shadow-sm" : "ring-1 ring-gray-200/50 hover:ring-gray-300 hover:scale-105"}
-                    ${outOfStock ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
-                  `}
-                  title={`Modèle ${m}`} // Affiche le nom (ex: "Modèle A") au survol de la souris
-                  style={{ backgroundColor: bgColor }}
-                >
-                  {outOfStock && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-full h-px bg-red-500 rotate-45" />
-                    </span>
-                  )}
-                  {!outOfStock && typeof stock === "number" && stock <= 3 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
-                      {stock}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setSelected((prev) => ({ ...prev, [axis.key]: value }))}
+                    disabled={disabled}
+                    className={`relative px-5 py-3 rounded-2xl text-[11px] font-mono transition-all duration-200 border
+                      ${isSelected
+                        ? "bg-[#2C2224] text-white border-[#2C2224] shadow-md scale-105"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:shadow-sm"
+                      }
+                      ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+                    `}
+                  >
+                    {value}
+                    {!disabled && typeof stock === "number" && stock <= 3 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                        {stock}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 }
