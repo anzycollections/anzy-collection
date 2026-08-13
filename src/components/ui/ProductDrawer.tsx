@@ -135,14 +135,12 @@ export default function ProductDrawer({
     <div className="fixed inset-0 z-50 bg-[#FAF7F5] overflow-y-auto">
 
       {/* IMAGE PLEIN ÉCRAN */}
-      <div
-        className="relative w-full h-[58vh] sm:h-[64vh] bg-gray-100"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div className="relative w-full h-[58vh] sm:h-[64vh] bg-gray-100">
         {allImages.length > 0 ? (
           <div
             onClick={() => setIsLightboxOpen(true)}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
             className="absolute inset-0 cursor-zoom-in"
           >
             <Image
