@@ -191,7 +191,7 @@ export function StoreProvider({
     try {
       const savedLangue = localStorage.getItem(LANGUE_KEY) as Langue | null;
       const savedDevise = localStorage.getItem(DEVISE_KEY) as Devise | null;
-      if (savedLangue === "FR" || savedLangue === "EN") setLangueState(savedLangue);
+      if (savedLangue === "FR" || savedLangue === "EN" || savedLangue === "ES" || savedLangue === "PT") setLangueState(savedLangue);
       if (savedDevise === "XOF" || savedDevise === "EUR" || savedDevise === "USD") setDeviseState(savedDevise);
     } catch {}
   }, []);
@@ -221,8 +221,8 @@ export function StoreProvider({
     try {
       setLoading(true);
       const [resProd, resContent] = await Promise.all([
-        fetch("/api/products"),
-        fetch("/api/content", { cache: "no-store" }),
+        fetch(`/api/products?lang=${langue}`),
+        fetch(`/api/content?lang=${langue}`, { cache: "no-store" }),
       ]);
 
       if (resProd.ok) {
@@ -257,8 +257,10 @@ export function StoreProvider({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [langue]);
 
+  // Se relance automatiquement quand la langue change (refreshAll est
+  // recréée avec la nouvelle langue à chaque changement de "langue" ci-dessus).
   useEffect(() => {
     refreshAll();
   }, [refreshAll]);

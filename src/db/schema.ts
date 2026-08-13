@@ -64,6 +64,19 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Cache des traductions automatiques (Google Translate). Chaque texte
+// français traduit vers une langue est stocké une seule fois ici, identifié
+// par un hash du texte + de la langue cible. Ça évite de payer/re-demander
+// une traduction déjà connue, et ça marche automatiquement pour tout texte
+// ajouté plus tard (produit, catégorie, bannière...) sans rien coder de plus.
+export const translationCache = pgTable("translation_cache", {
+  id: text("id").primaryKey(), // hash(texte + langue cible)
+  sourceText: text("source_text").notNull(),
+  targetLang: text("target_lang").notNull(),
+  translatedText: text("translated_text").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // NOUVELLE TABLE : Commandes
 export const orders = pgTable("orders", {
   id: text("id").primaryKey(), // ID généré côté serveur (ex: nanoid ou uuid)

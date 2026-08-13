@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { siteContent, categories } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { translateSiteContent } from "@/lib/translate";
 
 // Cette route sert du contenu modifié fréquemment depuis l'admin (livraison,
 // lookbook, etc.) — elle ne doit jamais être mise en cache par Next.js,
@@ -10,9 +11,13 @@ import { eq } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// GET /api/content : Récupère la config (hero, about, footer, social) + les catégories
-export async function GET() {
+// GET /api/content?lang=EN : Récupère la config (hero, about, footer, social) + les
+// catégories (traduits automatiquement si "lang" est fourni et différent de "FR")
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const lang = searchParams.get("lang") || "FR";
+
     const [config, allCategories] = await Promise.all([
       db.select().from(siteContent).where(eq(siteContent.key, "main_config")).limit(1),
       db.select().from(categories),
@@ -20,10 +25,12 @@ export async function GET() {
 
     const base = config[0] || {};
 
-    return NextResponse.json({
-      ...base,
-      categories: allCategories,
-    });
+    const translated = await translateSiteContent(
+      { ...base, categories: allCategories },
+      lang
+    );
+
+    return NextResponse.json(translated);
   } catch (error) {
     console.error("Erreur GET /api/content:", error);
     return NextResponse.json({ error: "Erreur lecture contenu" }, { status: 500 });

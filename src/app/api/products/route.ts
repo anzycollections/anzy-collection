@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db"; // ton instance drizzle-orm/neon-http
 import { products } from "@/db/schema";
+import { translateProducts } from "@/lib/translate";
 
 // Convertit une ligne de la table "products" (colonne categoryId) vers
 // le format attendu par le front (champ "category").
@@ -12,11 +13,16 @@ function formatProduct(row: typeof products.$inferSelect) {
   };
 }
 
-// GET /api/products : Récupérer tous les produits pour la Vitrine & Admin
-export async function GET() {
+// GET /api/products?lang=EN : Récupérer tous les produits pour la Vitrine & Admin
+// (traduits automatiquement si "lang" est fourni et différent de "FR")
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const lang = searchParams.get("lang") || "FR";
     const allProducts = await db.select().from(products);
-    return NextResponse.json(allProducts.map(formatProduct));
+    const formatted = allProducts.map(formatProduct);
+    const translated = await translateProducts(formatted, lang);
+    return NextResponse.json(translated);
   } catch (error) {
     console.error("Erreur GET /api/products:", error);
     return NextResponse.json({ error: "Erreur serveur DB" }, { status: 500 });
