@@ -100,6 +100,13 @@ Statut : En attente de validation (24h)
           if (uploadRes.ok) {
             const blob = await uploadRes.json();
             receiptUrl = blob.url;
+          } else {
+            // L'envoi automatique a échoué : on informe clairement la cliente
+            // plutôt que de la laisser croire que tout est passé, avec une
+            // consigne simple de secours (elle a déjà WhatsApp ouvert).
+            alert(
+              "Ta commande est bien enregistrée, mais l'envoi automatique de ta capture de paiement a échoué. Merci de l'envoyer directement dans la conversation WhatsApp qui vient de s'ouvrir."
+            );
           }
         }
 
