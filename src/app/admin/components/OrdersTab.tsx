@@ -94,6 +94,23 @@ export default function OrdersTab() {
     }
   };
 
+  const deleteOrder = async (orderId: string) => {
+    if (!confirm("Supprimer définitivement cette commande ? Cette action est irréversible.")) return;
+    setUpdatingId(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      } else {
+        alert("Impossible de supprimer cette commande.");
+      }
+    } catch {
+      alert("Erreur réseau lors de la suppression.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm space-y-6">
       <div className="border-b border-gray-100 pb-3 flex justify-between items-center">
@@ -206,6 +223,14 @@ export default function OrdersTab() {
                       Annuler
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => deleteOrder(o.id)}
+                    disabled={updatingId === o.id}
+                    className="text-[9px] font-mono uppercase font-bold px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-500 hover:text-white text-red-500 transition disabled:opacity-50 cursor-pointer ml-auto"
+                  >
+                    🗑 Supprimer
+                  </button>
                 </div>
               </div>
             );

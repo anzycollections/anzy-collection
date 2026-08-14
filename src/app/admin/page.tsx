@@ -20,7 +20,22 @@ export default function AdminPage() {
   
   // État pour savoir si les données ont bien été chargées
   const [isInitialized, setIsInitialized] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("products");
+  const ADMIN_TAB_KEY = "anzy-admin-tab";
+  const [activeTab, setActiveTabState] = useState<Tab>("products");
+
+  // Au premier chargement, on retombe sur le dernier onglet consulté (mémorisé
+  // dans le navigateur) plutôt que de toujours revenir sur "Produits".
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(ADMIN_TAB_KEY) as Tab | null;
+      if (saved) setActiveTabState(saved);
+    } catch {}
+  }, []);
+
+  const setActiveTab = (tab: Tab) => {
+    setActiveTabState(tab);
+    try { localStorage.setItem(ADMIN_TAB_KEY, tab); } catch {}
+  };
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

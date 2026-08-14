@@ -27,6 +27,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     finalFilename = filename.replace(/\.[^/.]+$/, "") + ".webp";
   }
 
-  const blob = await put(finalFilename, outputBuffer, { access: "public" });
+  const blob = await put(finalFilename, outputBuffer, { access: "public", addRandomSuffix: true });
   return NextResponse.json(blob);
 }

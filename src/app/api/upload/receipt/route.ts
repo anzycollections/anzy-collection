@@ -35,7 +35,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       finalFilename = `receipts/${filename.replace(/\.[^/.]+$/, "")}.webp`;
     }
 
-    const blob = await put(finalFilename, outputBuffer, { access: "public" });
+    const blob = await put(finalFilename, outputBuffer, { access: "public", addRandomSuffix: true });
     return NextResponse.json(blob);
   } catch (error) {
     console.error("Erreur upload reçu:", error);
