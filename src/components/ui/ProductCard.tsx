@@ -51,6 +51,8 @@ export default function ProductCard({
 
   const couleurs = extraireAttribut(["couleur", "color"]);
   const tailles = extraireAttribut(["taille", "size", "poids"]);
+  const labels: Record<string, string> = (product as any).variantLabels || {};
+  const displayLabel = (value: string) => labels[value] ?? value;
 
   // ---- MODE LISTE : ligne compacte pleine largeur ----
   if (viewMode === "list") {
@@ -99,13 +101,13 @@ export default function ProductCard({
               {couleurs.length > 0 && (
                 <span>
                   <strong className="text-gray-700 font-semibold">{t("product.colorLabel")}:</strong>{" "}
-                  {couleurs.join(", ")}
+                  {couleurs.map(displayLabel).join(", ")}
                 </span>
               )}
               {tailles.length > 0 && (
                 <span>
                   <strong className="text-gray-700 font-semibold">{t("product.sizeLabel")}:</strong>{" "}
-                  {tailles.join(", ")}
+                  {tailles.map(displayLabel).join(", ")}
                 </span>
               )}
             </div>
@@ -172,13 +174,13 @@ export default function ProductCard({
           {couleurs.length > 0 && (
             <p className="text-[10px] font-mono text-gray-500">
               <strong className="text-gray-700 font-semibold">{t("product.colorLabel")}:</strong>{" "}
-              {couleurs.join(", ")}
+              {couleurs.map(displayLabel).join(", ")}
             </p>
           )}
           {tailles.length > 0 && (
             <p className="text-[10px] font-mono text-gray-500">
               <strong className="text-gray-700 font-semibold">{t("product.sizeLabel")}:</strong>{" "}
-              {tailles.join(", ")}
+              {tailles.map(displayLabel).join(", ")}
             </p>
           )}
         </div>

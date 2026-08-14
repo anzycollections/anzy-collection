@@ -1,5 +1,7 @@
 "use client";
 
+import { useStore } from "@/context/StoreContext";
+
 interface OrderSummaryProps {
   items: Array<{
     id: string;
@@ -29,12 +31,13 @@ export default function OrderSummary({
   symboleDevise,
   onSubmit,
 }: OrderSummaryProps) {
+  const { t } = useStore();
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-6 sticky top-10">
       
       <div className="border-b border-gray-100 pb-4">
         <h3 className="text-xs font-mono uppercase tracking-[0.2em] text-[#2C2224] font-medium">
-          Résumé de la commande
+          {t("checkout.orderSummary")}
         </h3>
       </div>
 
@@ -47,7 +50,7 @@ export default function OrderSummary({
               {item.varianteName && (
                 <p className="text-[10px] text-gray-400 font-mono">{item.varianteName}</p>
               )}
-              <p className="text-[10px] text-gray-400">Qté : {item.quantity}</p>
+              <p className="text-[10px] text-gray-400">{t("checkout.qty")} : {item.quantity}</p>
             </div>
             <p className="font-mono text-[#2C2224] shrink-0">
               {(convertirPrix(item.price) * item.quantity).toLocaleString()} {symboleDevise}
@@ -59,15 +62,15 @@ export default function OrderSummary({
       {/* Totaux */}
       <div className="border-t border-gray-100 pt-4 space-y-2 text-xs font-mono">
         <div className="flex justify-between text-gray-500">
-          <span>Sous-total</span>
+          <span>{t("checkout.subtotal")}</span>
           <span>{convertirPrix(subtotal).toLocaleString()} {symboleDevise}</span>
         </div>
         <div className="flex justify-between text-gray-500">
-          <span>Livraison</span>
-          <span>{shippingCost > 0 ? `${convertirPrix(shippingCost).toLocaleString()} ${symboleDevise}` : "À calculer"}</span>
+          <span>{t("checkout.delivery")}</span>
+          <span>{shippingCost > 0 ? `${convertirPrix(shippingCost).toLocaleString()} ${symboleDevise}` : t("checkout.toCalculate")}</span>
         </div>
         <div className="flex justify-between text-[#2C2224] font-bold pt-2 border-t border-gray-100 text-sm">
-          <span>Total</span>
+          <span>{t("checkout.total")}</span>
           <span>{convertirPrix(total).toLocaleString()} {symboleDevise}</span>
         </div>
       </div>
@@ -83,11 +86,11 @@ export default function OrderSummary({
             : "bg-gray-200 text-gray-400 cursor-not-allowed"
         }`}
       >
-        {submitting ? "Transmission en cours..." : "Transmettre ma commande"}
+        {submitting ? t("checkout.submitting") : t("checkout.submit")}
       </button>
 
       <p className="text-[10px] text-gray-400 text-center font-light leading-relaxed">
-        En transmettant votre commande, vous confirmez vos informations. Aucun paiement automatique n'est prélevé en ligne.
+        {t("checkout.disclaimer")}
       </p>
     </div>
   );

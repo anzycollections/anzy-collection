@@ -9,11 +9,13 @@ import OrderSummary from "@/components/checkout/OrderSummary";
 import OrderSuccessModal from "@/components/checkout/OrderSuccessModal";
 import { useRouter } from "next/navigation";
 import { useCartUI } from "@/context/CartUIContext";
+import { useStore } from "@/context/StoreContext";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { openCart, closeCart } = useCartUI();
   const checkout = useCheckout();
+  const { t } = useStore();
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -25,9 +27,9 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-[#FAF7F5] flex items-center justify-center">
         <div className="text-center space-y-4 p-8">
-          <h1 className="text-2xl font-serif font-bold text-[#2C2224]">Votre panier est vide</h1>
-          <p className="text-gray-500 text-xs font-mono">Ajoutez des pièces pour continuer.</p>
-          <Link href="/" className="inline-block bg-[#2C2224] text-white px-8 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest hover:bg-black transition">Retour à la boutique</Link>
+          <h1 className="text-2xl font-serif font-bold text-[#2C2224]">{t("checkout.emptyCartTitle")}</h1>
+          <p className="text-gray-500 text-xs font-mono">{t("checkout.emptyCartSubtitle")}</p>
+          <Link href="/" className="inline-block bg-[#2C2224] text-white px-8 py-3 rounded-xl text-[10px] font-mono uppercase tracking-widest hover:bg-black transition">{t("checkout.backToShop")}</Link>
         </div>
       </div>
     );
@@ -36,7 +38,7 @@ export default function CheckoutPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkout.isFormValid()) {
-      alert("Veuillez remplir tous les champs obligatoires et fournir le justificatif.");
+      alert(t("checkout.missingFields"));
       return;
     }
     checkout.setSubmitting(true);
@@ -163,7 +165,7 @@ Statut : En attente de validation (24h)
             onClick={handleBackToCart}
             className="text-[11px] font-mono text-gray-400 hover:text-[#2C2224] transition tracking-wider flex items-center gap-1.5 cursor-pointer"
           >
-            <span>←</span> Retour à la boutique
+            <span>←</span> {t("checkout.backToShop")}
           </button>
         </div>
 

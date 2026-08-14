@@ -5,28 +5,28 @@ import { useCart } from "@/context/CartContext";
 import { useStore } from "@/context/StoreContext";
 
 const COUNTRIES = [
-  { name: "Bénin", flag: "🇧🇯" },
-  { name: "Burkina Faso", flag: "🇧🇫" },
-  { name: "Cap-Vert", flag: "🇨🇻" },
-  { name: "Côte d'Ivoire", flag: "🇨🇮" },
-  { name: "Gambie", flag: "🇬🇲" },
-  { name: "Ghana", flag: "🇬🇭" },
-  { name: "Guinée", flag: "🇬🇳" },
-  { name: "Guinée-Bissau", flag: "🇬🇼" },
-  { name: "Liberia", flag: "🇱🇷" },
-  { name: "Mali", flag: "🇲🇱" },
-  { name: "Mauritanie", flag: "🇲🇷" },
-  { name: "Niger", flag: "🇳🇪" },
-  { name: "Nigeria", flag: "🇳🇬" },
-  { name: "Sénégal", flag: "🇸🇳" },
-  { name: "Sierra Leone", flag: "🇸🇱" },
-  { name: "Togo", flag: "🇹🇬" },
-  { name: "Autre", flag: "🌍" },
+  { name: "Bénin", key: "country.benin", flag: "🇧🇯" },
+  { name: "Burkina Faso", key: "country.burkinaFaso", flag: "🇧🇫" },
+  { name: "Cap-Vert", key: "country.capVert", flag: "🇨🇻" },
+  { name: "Côte d'Ivoire", key: "country.coteIvoire", flag: "🇨🇮" },
+  { name: "Gambie", key: "country.gambie", flag: "🇬🇲" },
+  { name: "Ghana", key: "country.ghana", flag: "🇬🇭" },
+  { name: "Guinée", key: "country.guinee", flag: "🇬🇳" },
+  { name: "Guinée-Bissau", key: "country.guineeBissau", flag: "🇬🇼" },
+  { name: "Liberia", key: "country.liberia", flag: "🇱🇷" },
+  { name: "Mali", key: "country.mali", flag: "🇲🇱" },
+  { name: "Mauritanie", key: "country.mauritanie", flag: "🇲🇷" },
+  { name: "Niger", key: "country.niger", flag: "🇳🇪" },
+  { name: "Nigeria", key: "country.nigeria", flag: "🇳🇬" },
+  { name: "Sénégal", key: "country.senegal", flag: "🇸🇳" },
+  { name: "Sierra Leone", key: "country.sierraLeone", flag: "🇸🇱" },
+  { name: "Togo", key: "country.togo", flag: "🇹🇬" },
+  { name: "Autre", key: "country.autre", flag: "🌍" },
 ];
 
 export default function ShippingSelector() {
   const { country, setCountry, shippingOptions, selectedShipping, setSelectedShipping } = useCart() as any;
-  const { convertirPrix, symboleDevise } = useStore();
+  const { convertirPrix, symboleDevise, t } = useStore();
   const [isOpen, setIsOpen] = useState(false);
 
   const currentCountryObj = COUNTRIES.find((c) => c.name === country) || COUNTRIES[0];
@@ -34,7 +34,7 @@ export default function ShippingSelector() {
   return (
     <div className="bg-white p-4 rounded-2xl border border-gray-200/80 space-y-3 shadow-2xs relative">
       <div>
-        <label className="text-[9px] font-mono tracking-widest text-gray-400 uppercase block mb-1 font-semibold">Pays de livraison</label>
+        <label className="text-[9px] font-mono tracking-widest text-gray-400 uppercase block mb-1 font-semibold">{t("shipping.country")}</label>
         
         <div 
           onClick={() => setIsOpen(!isOpen)}
@@ -42,7 +42,7 @@ export default function ShippingSelector() {
         >
           <div className="flex items-center gap-2.5">
             <span className="text-base">{currentCountryObj.flag}</span>
-            <span className="font-semibold text-[#2C2224]">{currentCountryObj.name}</span>
+            <span className="font-semibold text-[#2C2224]">{t(currentCountryObj.key)}</span>
           </div>
           <span className={`text-gray-400 text-[10px] transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}>▼</span>
         </div>
@@ -61,7 +61,7 @@ export default function ShippingSelector() {
                 }`}
               >
                 <span className="text-base">{c.flag}</span>
-                <span>{c.name}</span>
+                <span>{t(c.key)}</span>
               </div>
             ))}
           </div>
@@ -69,7 +69,7 @@ export default function ShippingSelector() {
       </div>
 
       <div>
-        <label className="text-[9px] font-mono tracking-widest text-gray-400 uppercase block mb-1 font-semibold">Mode de livraison</label>
+        <label className="text-[9px] font-mono tracking-widest text-gray-400 uppercase block mb-1 font-semibold">{t("shipping.mode")}</label>
         <div className="space-y-2">
           {shippingOptions.map((opt: any) => (
             <div

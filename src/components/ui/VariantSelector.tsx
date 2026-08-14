@@ -9,6 +9,10 @@ interface VariantSelectorProps {
   onSelectVariante: (v: any) => void;
   currency?: string;
   productOptions?: { name: string; values: string[]; colorMap?: Record<string, string> }[];
+  // Dictionnaire valeur d'origine (français) -> texte traduit, pour l'affichage
+  // uniquement. La sélection et le colorMap continuent d'utiliser les valeurs
+  // d'origine, donc rien ne casse même sans ce dictionnaire (français par défaut).
+  labels?: Record<string, string>;
 }
 
 // Dictionnaire associant le nom du modèle à une couleur HEX.
@@ -72,8 +76,12 @@ export default function VariantSelector({
   onSelectVariante,
   currency = "XOF",
   productOptions,
+  labels,
 }: VariantSelectorProps) {
   const { t } = useStore();
+  // Libellé affiché pour une valeur ou un nom d'axe : traduit si disponible,
+  // sinon le texte d'origine (comportement identique à avant en français).
+  const displayLabel = (value: string): string => labels?.[value] ?? value;
   // Couleur exacte choisie par la vendeuse dans l'admin pour cette valeur précise
   // (ex: "Rouge" -> "#c0392b" tel qu'elle l'a réellement sélectionné), prioritaire
   // sur la devinette par dictionnaire ci-dessous. Si rien n'a été choisi pour
@@ -183,7 +191,7 @@ export default function VariantSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
-  const renderAxisLabel = (key: string) => (key === "__flat__" ? t("variant.genericChoice") : key);
+  const renderAxisLabel = (key: string) => (key === "__flat__" ? t("variant.genericChoice") : displayLabel(key));
 
   return (
     <div className="space-y-6">
@@ -192,7 +200,7 @@ export default function VariantSelector({
         return (
           <div key={axis.key} className="space-y-2.5">
             <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
-              {isColorAxis ? (axis.key === "__flat__" ? t("variant.colorAxis") : axis.key) : renderAxisLabel(axis.key)}
+              {isColorAxis ? (axis.key === "__flat__" ? t("variant.colorAxis") : displayLabel(axis.key)) : renderAxisLabel(axis.key)}
             </span>
             <div className="flex flex-wrap items-center gap-3">
               {axis.values.map((value) => {
@@ -210,7 +218,7 @@ export default function VariantSelector({
                       type="button"
                       onClick={() => setSelected((prev) => ({ ...prev, [axis.key]: value }))}
                       disabled={disabled}
-                      title={value}
+                      title={displayLabel(value)}
                       className={`relative flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 focus:outline-none
                         ${isSelected ? "ring-[1.5px] ring-offset-2 ring-[#2C2224] scale-110 shadow-sm" : "ring-1 ring-gray-200/50 hover:ring-gray-300 hover:scale-105"}
                         ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
@@ -245,7 +253,7 @@ export default function VariantSelector({
                       ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                     `}
                   >
-                    {value}
+                    {displayLabel(value)}
                     {!disabled && typeof stock === "number" && stock <= 3 && (
                       <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                         {stock}

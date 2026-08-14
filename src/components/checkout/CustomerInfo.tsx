@@ -1,6 +1,7 @@
 "use client";
 
 import { OTHER_COUNTRIES } from "@/data/otherCountries";
+import { useStore } from "@/context/StoreContext";
 
 interface CustomerInfoProps {
   formData: any;
@@ -22,28 +23,29 @@ export default function CustomerInfo({
   localShippingOptions, localSelectedShipping, setLocalSelectedShipping,
   effectiveShipping, selectedShipping,
 }: CustomerInfoProps) {
+  const { t } = useStore();
   return (
     <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
-      <h2 className="font-serif font-bold text-lg mb-6 border-b pb-4">1. Vos coordonnees</h2>
+      <h2 className="font-serif font-bold text-lg mb-6 border-b pb-4">{t("checkout.step1Title")}</h2>
       <div className="space-y-4">
         <div className="relative">
-          <input type="text" name="name" placeholder="Nom complet" required value={formData.name} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+          <input type="text" name="name" placeholder={t("checkout.fullName")} required value={formData.name} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-lg">*</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+          <input type="email" name="email" placeholder={t("checkout.email")} value={formData.email} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
           <div className="relative">
-            <input type="tel" name="phone" placeholder="Telephone / WhatsApp" required value={formData.phone} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+            <input type="tel" name="phone" placeholder={t("checkout.phone")} required value={formData.phone} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-lg">*</span>
           </div>
         </div>
         <div className="relative">
-          <input type="text" name="address" placeholder="Adresse de livraison" required value={formData.address} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+          <input type="text" name="address" placeholder={t("checkout.address")} required value={formData.address} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-lg">*</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <input type="text" name="city" placeholder="Ville" required value={formData.city} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
+            <input type="text" name="city" placeholder={t("checkout.city")} required value={formData.city} onChange={handleInputChange} className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none" />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-lg">*</span>
           </div>
           <div className="relative">
@@ -54,7 +56,7 @@ export default function CustomerInfo({
                   onChange={(e) => setCustomCountryName(e.target.value)}
                   className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none"
                 >
-                  <option value="">-- Choisissez votre pays --</option>
+                  <option value="">{t("checkout.chooseCountry")}</option>
                   {OTHER_COUNTRIES.map(country => (
                     <option key={country} value={country}>{country}</option>
                   ))}
@@ -77,14 +79,14 @@ export default function CustomerInfo({
 
         {!isOther && selectedShipping && (
           <div className="mt-4 p-4 bg-[#FAF7F5] rounded-xl border">
-            <p className="text-sm font-semibold">Livraison : {selectedShipping.name}</p>
+            <p className="text-sm font-semibold">{t("checkout.shippingLabel")} : {selectedShipping.name}</p>
             <p className="text-xs text-gray-500">{selectedShipping.price.toLocaleString()} F CFA</p>
           </div>
         )}
 
         {isOther && localShippingOptions.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold mb-2">Mode de livraison <span className="text-red-400">*</span></h3>
+            <h3 className="text-sm font-semibold mb-2">{t("shipping.mode")} <span className="text-red-400">*</span></h3>
             <div className="space-y-2">
               {localShippingOptions.map(opt => (
                 <label key={opt.id} className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${localSelectedShipping?.id === opt.id ? "border-[#E88D9E] bg-[#FFF5F7]" : "border-gray-200 hover:border-gray-300"}`}>
@@ -103,14 +105,14 @@ export default function CustomerInfo({
         )}
 
         <div>
-          <label className="text-xs font-semibold text-gray-600">Note / Commentaire (optionnel)</label>
+          <label className="text-xs font-semibold text-gray-600">{t("checkout.comment")}</label>
           <textarea
             name="comment"
             rows={3}
             value={formData.comment}
             onChange={handleInputChange}
             className="w-full mt-1 p-3 rounded-xl border border-gray-200 text-sm focus:border-[#E88D9E] outline-none"
-            placeholder="Precisions sur votre commande..."
+            placeholder={t("checkout.commentPlaceholder")}
           />
         </div>
       </div>

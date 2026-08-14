@@ -1,11 +1,14 @@
 "use client";
 
+import { useStore } from "@/context/StoreContext";
+
 interface OrderSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function OrderSuccessModal({ isOpen, onClose }: OrderSuccessModalProps) {
+  const { t } = useStore();
   if (!isOpen) return null;
 
   return (
@@ -17,15 +20,15 @@ export default function OrderSuccessModal({ isOpen, onClose }: OrderSuccessModal
             Anzy Collection
           </p>
           <h2 className="text-xl font-serif font-normal text-[#2C2224]">
-            Commande transmise
+            {t("checkout.orderTransmitted")}
           </h2>
           <p className="text-xs text-gray-500 font-light leading-relaxed px-2">
-            Votre commande a été transmise avec succès sur notre canal de traitement. Votre récapitulatif est ouvert sur WhatsApp. Notre équipe validera votre dossier sous 24 heures.
+            {t("checkout.orderSuccessMessage")}
           </p>
         </div>
 
         <div className="bg-[#FAF7F5] border border-gray-200/60 rounded-xl py-3 px-4 text-[10px] font-mono uppercase tracking-widest text-[#2C2224]">
-          Statut : En attente de confirmation
+          {t("checkout.pendingStatus")}
         </div>
 
         <button
@@ -33,7 +36,7 @@ export default function OrderSuccessModal({ isOpen, onClose }: OrderSuccessModal
           onClick={onClose}
           className="w-full py-3.5 bg-[#2C2224] text-white text-[10px] font-mono uppercase tracking-[0.2em] rounded-xl hover:bg-black transition cursor-pointer"
         >
-          Retour à la boutique
+          {t("checkout.backToShop")}
         </button>
       </div>
     </div>

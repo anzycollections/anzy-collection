@@ -1,13 +1,15 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
+import { useStore } from "@/context/StoreContext";
 
 export default function CartItemRow({ item, onUpdateQty, onRemove, onEditProduct, convertirPrix, symboleDevise }: any) {
+  const { t } = useStore();
   const [startX, setStartX] = useState<number | null>(null);
   const [translateX, setTranslateX] = useState<number>(0);
   const isSwiping = useRef(false);
 
   const id = item.productId || item.id;
-  const title = item.productName || item.name || "Article";
+  const title = item.productName || item.name || t("cart.article");
   const variante = item.varianteName && item.varianteName !== "Standard" ? item.varianteName : null;
 
   const handleTouchStart = (e: React.TouchEvent) => {

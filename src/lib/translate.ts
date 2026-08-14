@@ -93,8 +93,13 @@ export async function translateText(text: string, targetLang: string): Promise<s
 
 /**
  * Traduit les champs texte d'une liste de produits (nom, description, badge,
- * matière) en un seul lot groupé, pour économiser les appels API. Fonctionne
- * automatiquement pour tout produit ajouté plus tard, sans code supplémentaire.
+ * matière) en un seul lot groupé, pour économiser les appels API. Ajoute aussi
+ * un dictionnaire `variantLabels` (valeur d'origine -> texte traduit) pour les
+ * options/variantes (Couleur, Taille, Rouge, L...), SANS modifier les valeurs
+ * d'origine elles-mêmes : la sélection, le rapprochement de variante et les
+ * couleurs (colorMap) continuent de fonctionner sur le texte français d'origine,
+ * seul l'affichage change. Fonctionne automatiquement pour tout produit ajouté
+ * plus tard, sans code supplémentaire.
  */
 export async function translateProducts<T extends Record<string, any>>(
   products: T[],
@@ -120,6 +125,40 @@ export async function translateProducts<T extends Record<string, any>>(
   map.forEach((m, i) => {
     (result[m.productIndex] as any)[m.field] = translated[i];
   });
+
+  // --- Libellés de variantes/options (Couleur, Taille, Rouge, L...) ---
+  // On ne modifie jamais les valeurs d'origine (utilisées pour la sélection
+  // et le colorMap) : on construit juste un dictionnaire "valeur -> traduction"
+  // que le front utilise uniquement pour l'affichage.
+  const labelSet = new Set<string>();
+  products.forEach((p: any) => {
+    (p.options || []).forEach((opt: any) => {
+      if (opt?.name) labelSet.add(opt.name);
+      (opt?.values || []).forEach((v: string) => v && labelSet.add(v));
+    });
+    (p.variantes || []).forEach((v: any) => {
+      if (v?.name) labelSet.add(v.name);
+      if (v?.title) labelSet.add(v.title);
+      if (v?.combo) {
+        Object.entries(v.combo).forEach(([key, val]) => {
+          if (key) labelSet.add(key);
+          if (val) labelSet.add(String(val));
+        });
+      }
+    });
+  });
+
+  if (labelSet.size > 0) {
+    const labelList = Array.from(labelSet);
+    const translatedLabels = await translateBatch(labelList, targetLang);
+    const labelMap: Record<string, string> = {};
+    labelList.forEach((l, i) => {
+      labelMap[l] = translatedLabels[i];
+    });
+    result.forEach((p: any) => {
+      p.variantLabels = labelMap;
+    });
+  }
 
   return result;
 }

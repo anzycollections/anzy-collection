@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from "react";
 
 export default function Header() {
   const { items } = useCart();
-  const { langue, setLangue, devise, setDevise } = useStore();
+  const { langue, setLangue, devise, setDevise, t } = useStore();
   const { openCart } = useCartUI();
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -51,7 +51,7 @@ export default function Header() {
           <button
             onClick={openCart}
             className="relative p-2.5 rounded-2xl bg-[#2C2224] text-white hover:bg-[#E88D9E] transition-all duration-300 shadow-md cursor-pointer"
-            aria-label="Panier"
+            aria-label={t("header.cart")}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />

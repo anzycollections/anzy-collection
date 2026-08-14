@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useStore } from "@/context/StoreContext";
 
 export default function Footer() {
-  const { content } = useStore();
+  const { content, t } = useStore();
   const social = content?.social || {};
   const copyright = content?.footer?.copyright || "© Anzy Collection.";
 
@@ -18,7 +18,7 @@ export default function Footer() {
             ANZY COLLECTION
           </h3>
           <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
-            Maison de Beauté & Gaines
+            {t("footer.tagline")}
           </p>
         </div>
 
@@ -50,10 +50,10 @@ export default function Footer() {
               Facebook
             </a>
             <Link href="/" className="hover:text-[#E88D9E] transition">
-              Collection
+              {t("footer.collection")}
             </Link>
             <Link href="/admin" className="hover:text-[#E88D9E] transition">
-              Administration
+              {t("footer.admin")}
             </Link>
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function Footer() {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="hover:text-[#E88D9E] transition font-bold uppercase cursor-pointer"
           >
-            HAUT ↑
+            {t("footer.backToTop").toUpperCase()} ↑
           </button>
         </div>
 
