@@ -15,7 +15,7 @@ export default function CatalogSection({
   onCategoryChange,
   onSelectProduct,
 }: CatalogSectionProps) {
-  const { content } = useStore();
+  const { content, t } = useStore();
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   const categories = content?.categories || [];
@@ -35,10 +35,10 @@ export default function CatalogSection({
         <div className="flex flex-row items-end justify-between gap-4">
           <div>
             <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold block">
-              NOTRE SÉLECTION
+              {t("catalog.label")}
             </span>
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#2C2224] mt-1">
-              Le Catalogue
+              {t("catalog.title")}
             </h2>
           </div>
 
@@ -93,7 +93,7 @@ export default function CatalogSection({
                   : "bg-white text-gray-600 border border-gray-200 hover:border-[#E88D9E]"
               }`}
             >
-              Tous les articles
+              {t("catalog.allItems")}
             </button>
 
             {categories
@@ -121,7 +121,7 @@ export default function CatalogSection({
         <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-gray-200 space-y-3">
           <span className="text-4xl block">✨</span>
           <p className="text-sm font-medium text-[#2C2224]">
-            Aucun article disponible dans cette catégorie pour le moment.
+            {t("catalog.empty")}
           </p>
         </div>
       ) : (

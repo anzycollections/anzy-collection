@@ -9,7 +9,7 @@ interface FeaturedProductCardProps {
 }
 
 export default function FeaturedProductCard({ product, onSelect }: FeaturedProductCardProps) {
-  const { convertirPrix, symboleDevise } = useStore();
+  const { convertirPrix, symboleDevise, t } = useStore();
 
   if (!product) return null;
 
@@ -44,7 +44,7 @@ export default function FeaturedProductCard({ product, onSelect }: FeaturedProdu
 
       {/* Badge "Iconique" */}
       <span className="absolute top-4 left-4 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-[9px] font-mono uppercase tracking-widest font-bold">
-        ✦ Iconique
+        ✦ {t("featured.badge")}
       </span>
 
       {/* Infos produit, superposées en bas */}

@@ -32,6 +32,7 @@ export default function ProductDrawer({
   const store = useStore() as any;
   const convertirPrix = store?.convertirPrix || ((p: number) => p);
   const symboleDevise = store?.symboleDevise || "F CFA";
+  const t = store?.t || ((k: string) => k);
 
   const { addToCart } = useCart();
 
@@ -123,11 +124,11 @@ export default function ProductDrawer({
     const res = await createReview({ productId: product.id, author: newAuthor, rating: newRating, comment: newComment });
     setSubmitting(false);
     if (res.success) {
-      setSuccessMessage("Merci ! Votre avis a été envoyé et est en attente de modération.");
+      setSuccessMessage(t("product.reviewThanks"));
       setNewAuthor(""); setNewComment(""); setShowReviewForm(false);
       setTimeout(() => setSuccessMessage(""), 5000);
     } else {
-      alert("Une erreur est survenue lors de l'envoi de votre avis.");
+      alert(t("product.reviewError"));
     }
   };
 
@@ -155,7 +156,7 @@ export default function ProductDrawer({
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300 space-y-2">
             <span className="text-5xl">📷</span>
-            <span className="text-[10px] font-mono uppercase tracking-wider">Image à venir</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider">{t("product.imageComing")}</span>
           </div>
         )}
 
@@ -164,7 +165,7 @@ export default function ProductDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Retour"
+            aria-label={t("product.back")}
             className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-pointer active:scale-95"
           >
             ←
@@ -172,7 +173,7 @@ export default function ProductDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t("product.close")}
             className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-pointer active:scale-95"
           >
             ✕
@@ -236,17 +237,17 @@ export default function ProductDrawer({
           <div className="flex justify-center sm:justify-start pt-1">
             {currentStock !== undefined && currentStock <= 5 && currentStock > 0 && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-50 border border-orange-100/50 text-orange-600 text-[9px] font-mono font-bold uppercase tracking-widest shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>Plus que {currentStock} en stock
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>{t("product.stockLowPrefix")} {currentStock} {t("product.stockLowSuffix")}
               </span>
             )}
             {(currentStock === undefined || currentStock > 5) && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-100/50 text-emerald-600 text-[9px] font-mono font-bold uppercase tracking-widest shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Disponible
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{t("product.available")}
               </span>
             )}
             {currentStock === 0 && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 border border-red-100/50 text-red-600 text-[9px] font-mono font-bold uppercase tracking-widest shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>Rupture de stock
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>{t("product.outOfStock")}
               </span>
             )}
           </div>
@@ -264,7 +265,7 @@ export default function ProductDrawer({
         )}
 
         <div className="space-y-1.5">
-          <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">QUANTITÉ</span>
+          <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium block">{t("product.quantity").toUpperCase()}</span>
           <div className="inline-flex items-center rounded-xl bg-white border border-gray-200 p-0.5 shadow-2xs">
             <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-7 h-7 rounded-lg bg-gray-50 hover:bg-gray-100 font-bold text-gray-500 text-xs flex items-center justify-center transition cursor-pointer">-</button>
             <span className="w-8 text-center font-mono text-xs font-semibold text-[#2C2224]">{quantity}</span>
@@ -277,9 +278,9 @@ export default function ProductDrawer({
         {/* REVIEWS */}
         <div className="pt-4 border-t border-[#E88D9E]/15 space-y-3">
            <div className="flex justify-between items-center">
-            <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium">AVIS ({reviews.length})</span>
+            <span className="text-[9px] font-mono tracking-[0.15em] text-gray-400 uppercase font-medium">{t("product.reviews").toUpperCase()} ({reviews.length})</span>
             <button type="button" onClick={() => setShowReviewForm(!showReviewForm)} className="text-[9px] font-mono text-[#E88D9E] uppercase font-semibold hover:underline cursor-pointer">
-              {showReviewForm ? "Fermer" : "+ Donnez votre avis"}
+              {showReviewForm ? t("product.closeForm") : `+ ${t("product.giveReview")}`}
             </button>
           </div>
 
@@ -292,7 +293,7 @@ export default function ProductDrawer({
           {showReviewForm && (
             <form onSubmit={handleAddReview} className="space-y-2.5 p-3.5 rounded-xl border border-gray-100 bg-white">
               <div>
-                <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">Votre note</label>
+                <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">{t("product.yourRating")}</label>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -307,25 +308,25 @@ export default function ProductDrawer({
                 </div>
               </div>
               <div>
-                <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">Votre prénom</label>
+                <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">{t("product.yourName")}</label>
                 <input
                   type="text"
                   value={newAuthor}
                   onChange={(e) => setNewAuthor(e.target.value)}
                   required
                   className="w-full text-xs font-mono px-3 py-2 rounded-lg border border-gray-200 focus:border-[#E88D9E] outline-none"
-                  placeholder="Ex : Fatima"
+                  placeholder={t("product.namePlaceholder")}
                 />
               </div>
               <div>
-                <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">Votre avis</label>
+                <label className="text-[9px] font-mono uppercase tracking-wider text-gray-400 block mb-1">{t("product.yourReview")}</label>
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   required
                   rows={3}
                   className="w-full text-xs font-mono px-3 py-2 rounded-lg border border-gray-200 focus:border-[#E88D9E] outline-none resize-none"
-                  placeholder="Qu'avez-vous pensé de ce produit ?"
+                  placeholder={t("product.reviewPlaceholder")}
                 />
               </div>
               <button
@@ -333,16 +334,16 @@ export default function ProductDrawer({
                 disabled={submitting}
                 className="w-full py-2.5 rounded-lg bg-[#2C2224] hover:bg-[#E88D9E] text-white text-[10px] font-mono uppercase tracking-widest transition disabled:opacity-50 cursor-pointer"
               >
-                {submitting ? "Envoi..." : "Envoyer mon avis"}
+                {submitting ? t("product.sending") : t("product.sendReview")}
               </button>
             </form>
           )}
 
           <div className="space-y-2.5">
             {loadingReviews ? (
-              <p className="text-[10px] font-mono text-gray-400 italic">Chargement des avis...</p>
+              <p className="text-[10px] font-mono text-gray-400 italic">{t("product.loadingReviews")}</p>
             ) : reviews.length === 0 ? (
-              <p className="text-[10px] font-mono text-gray-400 italic">Aucun avis pour ce produit pour le moment.</p>
+              <p className="text-[10px] font-mono text-gray-400 italic">{t("product.noReviews")}</p>
             ) : (
               reviews.map((r) => (
                 <div key={r.id} className="p-3 rounded-xl border border-gray-100 bg-white space-y-1">
@@ -361,7 +362,7 @@ export default function ProductDrawer({
       {/* CTA fixé en bas de l'écran */}
       <div className="fixed bottom-0 left-0 right-0 p-5 bg-white/95 backdrop-blur-xl border-t border-[#E88D9E]/15 z-20 shadow-lg">
         <button type="button" onClick={handleAddToCart} disabled={currentStock === 0} className="w-full py-3.5 rounded-xl bg-[#2C2224] hover:bg-[#E88D9E] text-white text-[11px] font-mono font-medium uppercase tracking-[0.2em] shadow-md transition-all duration-300 flex items-center justify-between px-5 cursor-pointer active:scale-98 group disabled:opacity-50 disabled:cursor-not-allowed">
-          <span>{currentStock === 0 ? "ÉPUISÉ" : (initialVarianteId ? "METTRE À JOUR" : "AJOUTER AU PANIER")}</span>
+          <span>{currentStock === 0 ? t("product.soldOut").toUpperCase() : (initialVarianteId ? t("product.updateCart").toUpperCase() : t("product.addToCart").toUpperCase())}</span>
           <span className="font-mono text-[11px] text-[#E88D9E] group-hover:text-white transition-colors">{priceFormatted} {symboleDevise}</span>
         </button>
       </div>

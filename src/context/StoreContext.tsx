@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { DEFAULT_SHIPPING_PRICES } from "@/data/shippingZones";
+import { UI_STRINGS } from "@/i18n/uiStrings";
 
 export interface Category {
   id: string;
@@ -152,6 +153,7 @@ interface StoreContextType {
   deleteProduct: (id: string) => Promise<void>;
   saveContent: (newContent: StoreContent) => Promise<void>;
   uploadImage: (file: File) => Promise<string>;
+  t: (key: string) => string;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -180,6 +182,7 @@ export function StoreProvider({
         ]
   );
   const [siteConfig, setSiteConfig] = useState<StoreContent>(initialContent || {});
+  const [uiStrings, setUiStrings] = useState<Record<string, string>>(UI_STRINGS);
   // Si des données initiales (chargées côté serveur) sont déjà là, pas besoin
   // d'afficher un état de chargement au premier rendu.
   const [loading, setLoading] = useState(!initialProducts);
@@ -220,10 +223,16 @@ export function StoreProvider({
   const refreshAll = useCallback(async () => {
     try {
       setLoading(true);
-      const [resProd, resContent] = await Promise.all([
+      const [resProd, resContent, resUi] = await Promise.all([
         fetch(`/api/products?lang=${langue}`),
         fetch(`/api/content?lang=${langue}`, { cache: "no-store" }),
+        fetch(`/api/ui-strings?lang=${langue}`),
       ]);
+
+      if (resUi.ok) {
+        const dataUi = await resUi.json();
+        setUiStrings({ ...UI_STRINGS, ...dataUi });
+      }
 
       if (resProd.ok) {
         const dataProd = await resProd.json();
@@ -353,6 +362,13 @@ export function StoreProvider({
     products,
   };
 
+  // Renvoie le texte fixe traduit pour une clé (ex: t("product.addToCart")).
+  // Retombe sur le français si la clé n'existe pas encore côté traduction.
+  const t = useCallback(
+    (key: string) => uiStrings[key] ?? UI_STRINGS[key] ?? key,
+    [uiStrings]
+  );
+
   return (
     <StoreContext.Provider
       value={{
@@ -372,6 +388,7 @@ export function StoreProvider({
         deleteProduct,
         saveContent,
         uploadImage,
+        t,
       }}
     >
       {children}

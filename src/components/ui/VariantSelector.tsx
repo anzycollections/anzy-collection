@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { useStore } from "@/context/StoreContext";
 
 interface VariantSelectorProps {
   variantes: any[];
@@ -72,6 +73,7 @@ export default function VariantSelector({
   currency = "XOF",
   productOptions,
 }: VariantSelectorProps) {
+  const { t } = useStore();
   // Couleur exacte choisie par la vendeuse dans l'admin pour cette valeur précise
   // (ex: "Rouge" -> "#c0392b" tel qu'elle l'a réellement sélectionné), prioritaire
   // sur la devinette par dictionnaire ci-dessous. Si rien n'a été choisi pour
@@ -181,7 +183,7 @@ export default function VariantSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
-  const renderAxisLabel = (key: string) => (key === "__flat__" ? "Choix de la variante" : key);
+  const renderAxisLabel = (key: string) => (key === "__flat__" ? t("variant.genericChoice") : key);
 
   return (
     <div className="space-y-6">
@@ -190,7 +192,7 @@ export default function VariantSelector({
         return (
           <div key={axis.key} className="space-y-2.5">
             <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
-              {isColorAxis ? (axis.key === "__flat__" ? "Couleur" : axis.key) : renderAxisLabel(axis.key)}
+              {isColorAxis ? (axis.key === "__flat__" ? t("variant.colorAxis") : axis.key) : renderAxisLabel(axis.key)}
             </span>
             <div className="flex flex-wrap items-center gap-3">
               {axis.values.map((value) => {

@@ -9,7 +9,7 @@ interface FeaturedSliderProps {
 }
 
 export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps) {
-  const { content } = useStore();
+  const { content, t } = useStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const allProducts: Product[] = content?.products || [];
@@ -63,14 +63,14 @@ export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps)
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-white/10 pb-4 px-1">
         <div>
           <span className="text-[10px] font-mono tracking-widest text-[#E88D9E] uppercase font-bold block">
-            SÉLECTION ANZY
+            {t("featured.label")}
           </span>
           <h2 className="text-2xl sm:text-3xl font-serif font-bold text-white">
-            Pièces Iconiques
+            {t("featured.title")}
           </h2>
         </div>
         <p className="text-xs text-white/50 font-light max-w-xs">
-          Les incontournables plébiscités par nos clientes pour sublimer vos courbes.
+          {t("featured.subtitle")}
         </p>
       </div>
 

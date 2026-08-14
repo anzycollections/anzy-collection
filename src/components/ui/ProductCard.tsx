@@ -14,7 +14,7 @@ export default function ProductCard({
   onSelect,
   viewMode = "grid",
 }: ProductCardProps) {
-  const { convertirPrix, symboleDevise } = useStore();
+  const { convertirPrix, symboleDevise, t } = useStore();
 
   if (!product) return null;
 
@@ -32,7 +32,7 @@ export default function ProductCard({
     const affiche = `${prixAffiche.toLocaleString()} ${
       symboleDevise === "F CFA" ? "F CFA" : symboleDevise
     }`;
-    return hasVariantes ? `À partir de ${affiche}` : affiche;
+    return hasVariantes ? `${t("product.startingFrom")} ${affiche}` : affiche;
   };
 
   const mainImage =
@@ -80,7 +80,7 @@ export default function ProductCard({
               {product.brand || "ANZY COLLECTION"}
             </span>
             <span className="text-[8px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#FAF7F5] text-[#2C2224] border border-gray-100 shrink-0">
-              {product.badge || "Nouveauté"}
+              {product.badge || t("product.defaultBadge")}
             </span>
           </div>
 
@@ -98,13 +98,13 @@ export default function ProductCard({
             <div className="flex flex-wrap gap-x-3 text-[10px] font-mono text-gray-500 pt-0.5">
               {couleurs.length > 0 && (
                 <span>
-                  <strong className="text-gray-700 font-semibold">Couleur:</strong>{" "}
+                  <strong className="text-gray-700 font-semibold">{t("product.colorLabel")}:</strong>{" "}
                   {couleurs.join(", ")}
                 </span>
               )}
               {tailles.length > 0 && (
                 <span>
-                  <strong className="text-gray-700 font-semibold">Taille:</strong>{" "}
+                  <strong className="text-gray-700 font-semibold">{t("product.sizeLabel")}:</strong>{" "}
                   {tailles.join(", ")}
                 </span>
               )}
@@ -127,7 +127,7 @@ export default function ProductCard({
     >
       <div className="absolute top-6 left-6 z-10">
         <span className="glass-pill text-[#2C2224] text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 rounded-full font-bold shadow-xs">
-          {product.badge || "Nouveauté"}
+          {product.badge || t("product.defaultBadge")}
         </span>
       </div>
 
@@ -145,7 +145,7 @@ export default function ProductCard({
         ) : (
           <div className="flex flex-col items-center justify-center text-gray-300 space-y-2">
             <span className="text-4xl">📷</span>
-            <span className="text-[10px] font-mono uppercase tracking-wider">Image à venir</span>
+            <span className="text-[10px] font-mono uppercase tracking-wider">{t("product.imageComing")}</span>
           </div>
         )}
       </div>
@@ -171,13 +171,13 @@ export default function ProductCard({
         <div className="min-h-[2.5rem] space-y-1">
           {couleurs.length > 0 && (
             <p className="text-[10px] font-mono text-gray-500">
-              <strong className="text-gray-700 font-semibold">Couleur:</strong>{" "}
+              <strong className="text-gray-700 font-semibold">{t("product.colorLabel")}:</strong>{" "}
               {couleurs.join(", ")}
             </p>
           )}
           {tailles.length > 0 && (
             <p className="text-[10px] font-mono text-gray-500">
-              <strong className="text-gray-700 font-semibold">Taille:</strong>{" "}
+              <strong className="text-gray-700 font-semibold">{t("product.sizeLabel")}:</strong>{" "}
               {tailles.join(", ")}
             </p>
           )}
@@ -185,7 +185,7 @@ export default function ProductCard({
 
         <div className="mt-auto pt-3 border-t border-[#E88D9E]/10 flex items-center justify-between">
           <span className="text-[10px] font-mono uppercase tracking-wider text-[#E88D9E] group-hover:translate-x-1 transition font-bold">
-            Découvrir la pièce →
+            {t("product.discover")} →
           </span>
         </div>
       </div>
