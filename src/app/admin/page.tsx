@@ -128,14 +128,26 @@ export default function AdminPage() {
               Tableau de Bord
             </h1>
           </div>
-          <a 
-            href="/" 
-            target="_blank" 
-            className="text-[11px] font-mono tracking-widest text-[#E88D9E] hover:text-[#2C2224] uppercase transition-colors flex items-center gap-1.5 shrink-0"
-          >
-            <span>Aperçu boutique</span>
-            <span className="text-xs">↗</span>
-          </a>
+          <div className="flex items-center gap-4 shrink-0">
+            <a 
+              href="/" 
+              target="_blank" 
+              className="text-[11px] font-mono tracking-widest text-[#E88D9E] hover:text-[#2C2224] uppercase transition-colors flex items-center gap-1.5"
+            >
+              <span>Aperçu boutique</span>
+              <span className="text-xs">↗</span>
+            </a>
+            <button
+              type="button"
+              onClick={async () => {
+                await fetch("/api/admin/logout", { method: "POST" });
+                window.location.href = "/admin/login";
+              }}
+              className="text-[11px] font-mono tracking-widest text-gray-400 hover:text-red-500 uppercase transition-colors cursor-pointer"
+            >
+              Se déconnecter
+            </button>
+          </div>
         </div>
 
         <div className="relative">

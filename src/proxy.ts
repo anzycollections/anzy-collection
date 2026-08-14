@@ -1,66 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifySessionToken, ADMIN_SESSION_COOKIE } from "@/lib/adminSession";
 
 /**
  * Protection de l'espace d'administration.
  *
- * Avant cette correction, /admin ainsi que toutes les routes API permettant
- * de modifier des données (produits, contenu du site, images, consultation
- * des commandes) étaient accessibles publiquement : n'importe quel visiteur
- * connaissant ou devinant l'URL /admin pouvait supprimer des produits,
- * modifier le contenu du site ou consulter les commandes clients.
- *
- * Ce middleware exige un identifiant + mot de passe (Basic Auth) définis
- * via les variables d'environnement ADMIN_USER et ADMIN_PASSWORD.
+ * L'admin se connecte via une vraie page (/admin/login), qui pose un cookie
+ * de session signé (voir src/lib/adminSession.ts) — plus de popup Basic Auth
+ * du navigateur, qui pouvait être fermée par erreur.
  *
  * Restent volontairement PUBLICS (nécessaires au fonctionnement normal
  * de la boutique) :
  *  - GET  /api/products, GET /api/content  → affichage de la boutique
  *  - POST /api/orders                       → une cliente doit pouvoir passer commande
  *  - POST /api/upload/receipt               → une cliente doit pouvoir joindre son reçu de paiement
+ *  - /admin/login, POST /api/admin/login    → il faut pouvoir se connecter la première fois
  */
 
-function isAuthorized(req: NextRequest): boolean {
-  const adminUser = process.env.ADMIN_USER;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-
-  // Si les identifiants ne sont pas configurés, on bloque par sécurité
-  // plutôt que de laisser l'accès ouvert.
-  if (!adminUser || !adminPassword) return false;
-
-  const header = req.headers.get("authorization");
-  if (!header || !header.startsWith("Basic ")) return false;
-
-  try {
-    const decoded = atob(header.split(" ")[1]);
-    const separatorIndex = decoded.indexOf(":");
-    const user = decoded.slice(0, separatorIndex);
-    const pass = decoded.slice(separatorIndex + 1);
-    return user === adminUser && pass === adminPassword;
-  } catch {
-    return false;
-  }
+async function isAuthorized(req: NextRequest): Promise<boolean> {
+  const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  return verifySessionToken(token);
 }
 
-function unauthorizedResponse() {
-  return new NextResponse("Authentification requise", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Anzy Collection Admin"' },
-  });
-}
-
-// ⚠️ PROTECTION TEMPORAIREMENT DÉSACTIVÉE ⚠️
-// Le temps de finaliser le site (upload produits, tests admin, etc.),
-// /admin et les routes d'écriture sont accessibles sans mot de passe.
-// Pour RÉACTIVER la protection : repasse cette valeur à false.
-const AUTH_TEMPORARILY_DISABLED = true;
-
-export function proxy(req: NextRequest) {
-  if (AUTH_TEMPORARILY_DISABLED) {
-    return NextResponse.next();
-  }
-
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const method = req.method.toUpperCase();
+
+  // La page de connexion elle-même doit rester accessible sans être connecté
+  // (sinon impossible de se connecter la première fois).
+  if (pathname === "/admin/login") {
+    return NextResponse.next();
+  }
 
   const isAdminPage = pathname.startsWith("/admin");
 
@@ -84,8 +53,17 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!isAuthorized(req)) {
-    return unauthorizedResponse();
+  const authorized = await isAuthorized(req);
+  if (!authorized) {
+    if (isAdminPage) {
+      // Page consultée directement dans le navigateur → on renvoie vers la
+      // page de connexion, en gardant en mémoire où l'utilisatrice voulait aller.
+      const loginUrl = new URL("/admin/login", req.url);
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    // Appel API (fetch depuis le panneau admin) → réponse JSON, pas de redirection.
+    return NextResponse.json({ error: "Authentification requise." }, { status: 401 });
   }
 
   return NextResponse.next();
