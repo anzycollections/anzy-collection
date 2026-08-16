@@ -35,14 +35,14 @@ export default function ProductTable({ products, onEdit, onDelete, onDuplicate, 
               <th className="py-3 px-3 sm:px-6">Catégorie</th>
               <th className="py-3 px-3 sm:px-6">Prix</th>
               <th className="py-3 px-3 sm:px-6">Stock</th>
-              <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
+              <th className="py-3 px-4 sm:px-6 text-right sticky right-0 bg-gray-50/50">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 text-xs font-sans">
             {products.map((p) => {
               const mainImg = p.images && p.images.length > 0 ? p.images[0] : null;
               return (
-                <tr key={p.id} className={`hover:bg-gray-50/50 transition ${p.visible === false ? "opacity-50" : ""}`}>
+                <tr key={p.id} className={`group hover:bg-gray-50/50 transition ${p.visible === false ? "opacity-50" : ""}`}>
                   <td className="py-3 pl-4 sm:pl-6 pr-2">
                     {onToggleVisible && (
                       <button
@@ -102,47 +102,52 @@ export default function ProductTable({ products, onEdit, onDelete, onDuplicate, 
                       En stock ({p.stock || 0})
                     </span>
                   </td>
-                  <td className="py-3 px-4 sm:px-6 text-right">
+                  <td className="py-3 px-4 sm:px-6 text-right sticky right-0 bg-white group-hover:bg-gray-50/50">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
                         onClick={() => onEdit(p)}
-                        className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-gray-100 hover:bg-[#2C2224] hover:text-white text-[9px] sm:text-[10px] font-mono uppercase font-bold transition cursor-pointer"
+                        title="Éditer"
+                        aria-label="Éditer"
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-[#2C2224] hover:text-white text-sm transition cursor-pointer"
                       >
-                        Éditer
+                        ✎
                       </button>
                       {onToggleFeatured && (
                         <button
                           type="button"
                           onClick={() => onToggleFeatured(p)}
                           title={p.featured ? "Retirer des Pièces Iconiques" : "Mettre en avant (Pièces Iconiques)"}
-                          className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-mono uppercase font-bold transition cursor-pointer ${
+                          aria-label="Mettre en avant"
+                          className={`w-8 h-8 flex items-center justify-center rounded-xl text-sm transition cursor-pointer ${
                             p.featured
                               ? "bg-amber-400 text-white hover:bg-amber-500"
                               : "bg-gray-100 hover:bg-amber-100 text-gray-600"
                           }`}
                         >
-                          {p.featured ? "★ En avant" : "☆ Mettre en avant"}
+                          {p.featured ? "★" : "☆"}
                         </button>
                       )}
                       {onDuplicate && (
                         <button
                           type="button"
                           onClick={() => onDuplicate(p)}
-                          className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-gray-100 hover:bg-[#E88D9E] hover:text-white text-[9px] sm:text-[10px] font-mono uppercase font-bold transition cursor-pointer"
                           title="Dupliquer"
+                          aria-label="Dupliquer"
+                          className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-[#E88D9E] hover:text-white text-sm transition cursor-pointer"
                         >
-                          Dupliquer
+                          ⧉
                         </button>
                       )}
                       {onDelete && (
                         <button
                           type="button"
                           onClick={() => onDelete(p.id)}
-                          className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-red-50 hover:bg-red-500 hover:text-white text-red-500 text-[9px] sm:text-[10px] font-mono uppercase font-bold transition cursor-pointer"
                           title="Supprimer"
+                          aria-label="Supprimer"
+                          className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 hover:bg-red-500 hover:text-white text-red-500 text-sm transition cursor-pointer"
                         >
-                          ✕
+                          🗑
                         </button>
                       )}
                     </div>
