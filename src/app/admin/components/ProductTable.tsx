@@ -8,9 +8,10 @@ interface ProductTableProps {
   onDelete?: (productId: string) => void;
   onDuplicate?: (product: Product) => void;
   onToggleVisible?: (product: Product) => void;
+  onToggleFeatured?: (product: Product) => void;
 }
 
-export default function ProductTable({ products, onEdit, onDelete, onDuplicate, onToggleVisible }: ProductTableProps) {
+export default function ProductTable({ products, onEdit, onDelete, onDuplicate, onToggleVisible, onToggleFeatured }: ProductTableProps) {
   const store = useStore() as any;
   const convertirPrix = store?.convertirPrix || ((p: number) => p);
   const symboleDevise = store?.symboleDevise || "F CFA";
@@ -110,6 +111,20 @@ export default function ProductTable({ products, onEdit, onDelete, onDuplicate, 
                       >
                         Éditer
                       </button>
+                      {onToggleFeatured && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleFeatured(p)}
+                          title={p.featured ? "Retirer des Pièces Iconiques" : "Mettre en avant (Pièces Iconiques)"}
+                          className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[9px] sm:text-[10px] font-mono uppercase font-bold transition cursor-pointer ${
+                            p.featured
+                              ? "bg-amber-400 text-white hover:bg-amber-500"
+                              : "bg-gray-100 hover:bg-amber-100 text-gray-600"
+                          }`}
+                        >
+                          {p.featured ? "★ En avant" : "☆ Mettre en avant"}
+                        </button>
+                      )}
                       {onDuplicate && (
                         <button
                           type="button"

@@ -6,6 +6,7 @@ import { Product, useStore } from "@/context/StoreContext";
 import { useCart } from "@/context/CartContext";
 import ProductDescription from "./ProductDescription";
 import VariantSelector from "./VariantSelector";
+import ShareButton from "./ShareButton";
 import { getApprovedReviews, createReview } from "@/app/actions/reviews";
 
 interface ProductDrawerProps {
@@ -170,14 +171,17 @@ export default function ProductDrawer({
           >
             ←
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("product.close")}
-            className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-pointer active:scale-95"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2.5">
+            <ShareButton productId={product.id} productName={product.name} className="w-10 h-10 text-base" />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("product.close")}
+              className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-md flex items-center justify-center text-[#2C2224] hover:bg-white transition cursor-pointer active:scale-95"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Pastilles de pagination si plusieurs images */}

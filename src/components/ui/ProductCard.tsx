@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Product, useStore } from "@/context/StoreContext";
+import ShareButton from "./ShareButton";
 
 interface ProductCardProps {
   product: Product;
@@ -113,9 +114,12 @@ export default function ProductCard({
             </div>
           )}
 
-          <span className="text-xs font-bold text-[#2C2224] block pt-1">
-            {formatPrix()}
-          </span>
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <span className="text-xs font-bold text-[#2C2224]">
+              {formatPrix()}
+            </span>
+            <ShareButton productId={product.id} productName={product.name} className="w-7 h-7 text-xs shrink-0" />
+          </div>
         </div>
       </div>
     );
@@ -132,6 +136,12 @@ export default function ProductCard({
           {product.badge || t("product.defaultBadge")}
         </span>
       </div>
+
+      <ShareButton
+        productId={product.id}
+        productName={product.name}
+        className="absolute top-6 right-6 z-10 w-9 h-9"
+      />
 
       {/* Le conteneur d'image a une hauteur fixe h-64 sm:h-72 */}
       <div className="relative h-64 sm:h-72 w-full flex items-center justify-center my-3 overflow-hidden rounded-2xl bg-white/40 backdrop-blur-md border border-white/60">

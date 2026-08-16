@@ -21,16 +21,15 @@ export default function AdminPage() {
   // État pour savoir si les données ont bien été chargées
   const [isInitialized, setIsInitialized] = useState(false);
   const ADMIN_TAB_KEY = "anzy-admin-tab";
-  const [activeTab, setActiveTabState] = useState<Tab>("products");
-
-  // Au premier chargement, on retombe sur le dernier onglet consulté (mémorisé
-  // dans le navigateur) plutôt que de toujours revenir sur "Produits".
-  useEffect(() => {
+  const [activeTab, setActiveTabState] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "products";
     try {
       const saved = localStorage.getItem(ADMIN_TAB_KEY) as Tab | null;
-      if (saved) setActiveTabState(saved);
-    } catch {}
-  }, []);
+      return saved || "products";
+    } catch {
+      return "products";
+    }
+  });
 
   const setActiveTab = (tab: Tab) => {
     setActiveTabState(tab);
@@ -100,6 +99,15 @@ export default function AdminPage() {
     } catch (e) {
       console.error(e);
       alert("Une erreur est survenue lors du changement de visibilité.");
+    }
+  };
+
+  const handleToggleFeatured = async (product: Product) => {
+    try {
+      await updateProduct(product.id, { featured: !product.featured } as Partial<Product>);
+    } catch (e) {
+      console.error(e);
+      alert("Une erreur est survenue lors de la mise en avant.");
     }
   };
 
@@ -211,7 +219,7 @@ export default function AdminPage() {
             {showForm && (
               <ProductForm editingProduct={editingProduct} onSave={handleSaveProduct} />
             )}
-            <ProductTable products={filtered} onEdit={(p: Product) => { setEditingProduct(p); setShowForm(true); }} onDelete={handleDeleteProduct} onDuplicate={handleDuplicateProduct} onToggleVisible={handleToggleVisible} />
+            <ProductTable products={filtered} onEdit={(p: Product) => { setEditingProduct(p); setShowForm(true); }} onDelete={handleDeleteProduct} onDuplicate={handleDuplicateProduct} onToggleVisible={handleToggleVisible} onToggleFeatured={handleToggleFeatured} />
           </div>
         )}
 

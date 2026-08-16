@@ -42,6 +42,7 @@ export interface Product {
   image?: string;
   stock?: number;
   visible?: boolean;
+  featured?: boolean;
   options?: VarianteOption[];
   variantes?: VarianteCombi[];
 }

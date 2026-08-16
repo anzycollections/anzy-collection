@@ -15,20 +15,9 @@ export default function FeaturedSlider({ onSelectProduct }: FeaturedSliderProps)
   const allProducts: Product[] = content?.products || [];
   const visibleProducts = allProducts.filter((p: Product) => p.visible);
 
-  const taggedProducts = visibleProducts.filter(
-    (p: Product) =>
-      p.badge === "Bestseller" ||
-      p.badge === "Incontournable" ||
-      p.badge === "Tendance" ||
-      p.badge === "Nouveauté" ||
-      p.badge === "BESTSELLER" || 
-      p.badge === "NOUVEAUTÉ"
-  );
-
-  const displayProducts =
-    taggedProducts.length > 0
-      ? taggedProducts.slice(0, 4)
-      : visibleProducts.slice(0, 4);
+  // Section entièrement contrôlée par l'interrupteur "Mettre en avant" de
+  // l'admin — plus de devinette par badge, plus de limite cachée à 4.
+  const displayProducts = visibleProducts.filter((p: Product) => p.featured);
 
   // DÉFILEMENT AUTOMATIQUE TOUTES LES 2 SECONDES
   useEffect(() => {

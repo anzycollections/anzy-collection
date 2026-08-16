@@ -23,6 +23,7 @@ export const products = pgTable("products", {
   images: jsonb("images").$type<string[]>().default([]),
   stock: integer("stock").default(0).notNull(),
   visible: boolean("visible").default(true).notNull(),
+  featured: boolean("featured").default(false).notNull(),
   options: jsonb("options").$type<{ name: string; values: string[]; colorMap?: Record<string, string> }[]>().default([]),
   variantes: jsonb("variantes").$type<{
     id: string;
