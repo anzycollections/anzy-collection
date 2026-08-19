@@ -198,7 +198,7 @@ export default function VariantSelector({
       {axes.map((axis) => {
         const isColorAxis = axis.values.some((v) => resolveColor(v));
         return (
-          <div key={axis.key} className="space-y-2.5">
+          <div key={axis.key} className="space-y-4">
             <span className="text-[10px] font-mono tracking-[0.2em] text-gray-500 uppercase font-medium">
               {isColorAxis ? (axis.key === "__flat__" ? t("variant.colorAxis") : displayLabel(axis.key)) : renderAxisLabel(axis.key)}
             </span>
