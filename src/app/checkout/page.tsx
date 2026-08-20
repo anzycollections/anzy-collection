@@ -35,7 +35,7 @@ export default function CheckoutPage() {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkout.isFormValid()) {
       alert(t("checkout.missingFields"));
@@ -45,17 +45,41 @@ export default function CheckoutPage() {
 
     const WHATSAPP_NUMBER = "2290156646045";
 
-    // Construction du message SANS attendre l'upload du reçu ou la sauvegarde en base
-    // (ces deux opérations se font en arrière-plan, plus bas). On redirige vers
-    // WhatsApp en tout premier, de façon synchrone, dans le même clic — c'est la
-    // seule façon fiable d'éviter que les navigateurs (Safari en particulier)
-    // bloquent l'ouverture en la considérant comme un popup non désiré.
+    // On envoie d'abord le justificatif de paiement, AVANT d'ouvrir WhatsApp.
+    // Important : dès que la cliente bascule sur l'onglet WhatsApp qui vient
+    // de s'ouvrir, le navigateur met celui-ci en arrière-plan et peut couper
+    // net une requête encore en cours — c'est ce qui causait des envois de
+    // reçu qui échouaient de façon aléatoire. En l'attendant ici, avant
+    // toute redirection, l'envoi a le temps de se terminer correctement.
+    let receiptUrl = "";
+    if (checkout.paymentMethod === "mobile_money" && checkout.receiptFile) {
+      try {
+        const uploadRes = await fetch(
+          `/api/upload/receipt?filename=${encodeURIComponent(checkout.receiptFile.name)}`,
+          { method: "POST", body: checkout.receiptFile }
+        );
+        if (uploadRes.ok) {
+          const blob = await uploadRes.json();
+          receiptUrl = blob.url;
+        } else {
+          alert(
+            "Ta commande est bien enregistrée, mais l'envoi automatique de ta capture de paiement a échoué. Merci de l'envoyer directement dans la conversation WhatsApp qui vient de s'ouvrir."
+          );
+        }
+      } catch (err) {
+        console.error("Erreur lors de l'envoi du reçu :", err);
+        alert(
+          "Ta commande est bien enregistrée, mais l'envoi automatique de ta capture de paiement a échoué. Merci de l'envoyer directement dans la conversation WhatsApp qui vient de s'ouvrir."
+        );
+      }
+    }
+
     const itemsText = checkout.items
       .map(item => `• ${item.productName} (${item.varianteName || 'Standard'}) x${item.quantity} - ${(item.price * item.quantity).toLocaleString()} F CFA`)
       .join("\n");
 
     const paymentText = checkout.paymentMethod === "mobile_money"
-      ? "Paiement : Mobile Money — justificatif disponible dans l'onglet Commandes de l'admin (quelques secondes après l'envoi de ce message)"
+      ? `Paiement : Mobile Money${receiptUrl ? `\n• Reçu : ${receiptUrl}` : " (reçu à joindre manuellement ci-dessous)"}`
       : `Transfert : ${checkout.transferService} (MTCN: ${checkout.mtcnCode})`;
 
     const message = `
@@ -82,34 +106,15 @@ Statut : En attente de validation (24h)
 
     const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
-    // Redirection immédiate, synchrone — rien ne la retarde.
+    // Redirection vers WhatsApp — maintenant que le reçu est bien envoyé.
     window.open(whatsappUrl, "_blank");
     checkout.setSubmitting(false);
     setShowSuccessModal(true);
 
-    // Sauvegarde en base + upload du reçu, en arrière-plan (n'affecte jamais
-    // l'expérience de la cliente ni la redirection WhatsApp ci-dessus).
+    // Sauvegarde de la commande en base, en arrière-plan — celle-ci peut
+    // continuer même après le changement d'onglet sans conséquence visible.
     (async () => {
       try {
-        let receiptUrl = "";
-        if (checkout.paymentMethod === "mobile_money" && checkout.receiptFile) {
-          const uploadRes = await fetch(
-            `/api/upload/receipt?filename=${encodeURIComponent(checkout.receiptFile.name)}`,
-            { method: "POST", body: checkout.receiptFile }
-          );
-          if (uploadRes.ok) {
-            const blob = await uploadRes.json();
-            receiptUrl = blob.url;
-          } else {
-            // L'envoi automatique a échoué : on informe clairement la cliente
-            // plutôt que de la laisser croire que tout est passé, avec une
-            // consigne simple de secours (elle a déjà WhatsApp ouvert).
-            alert(
-              "Ta commande est bien enregistrée, mais l'envoi automatique de ta capture de paiement a échoué. Merci de l'envoyer directement dans la conversation WhatsApp qui vient de s'ouvrir."
-            );
-          }
-        }
-
         await fetch("/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
